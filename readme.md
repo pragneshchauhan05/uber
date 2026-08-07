@@ -338,3 +338,251 @@ Invalidate the current JWT token so it can no longer be used.
   "message": "Invalid token"
 }
 ```
+
+---
+
+## 🚖 Captain Endpoints
+
+### 1. Register Captain
+
+Register a new captain with vehicle details and return a JWT token.
+
+- **Endpoint:** `/captains/register`
+- **HTTP Method:** `POST`
+- **Content-Type:** `application/json`
+
+#### 📥 Request Headers
+
+| Header         | Type   | Value              | Required |
+| :------------- | :----- | :----------------- | :------- |
+| `Content-Type` | String | `application/json` | Yes      |
+
+#### 📝 Request Body Requirements
+
+| Field                 | Type   | Required | Constraints / Description            |
+| :-------------------- | :----- | :------- | :----------------------------------- |
+| `fullname.firstname`  | String | **Yes**  | Minimum 3 characters long            |
+| `fullname.lastname`   | String | No       | Minimum 3 characters long            |
+| `email`               | String | **Yes**  | Must be a valid email address        |
+| `password`            | String | **Yes**  | Minimum 6 characters long            |
+| `vehicle.color`       | String | **Yes**  | Minimum 3 characters long            |
+| `vehicle.plate`       | String | **Yes**  | Minimum 6 characters long            |
+| `vehicle.capacity`    | Number | **Yes**  | Minimum 1                            |
+| `vehicle.vehicleType` | String | **Yes**  | Must be one of `car`, `bike`, `auto` |
+
+##### Example Request Body:
+
+```json
+{
+  "fullname": {
+    "firstname": "John",
+    "lastname": "Doe"
+  },
+  "email": "captain@example.com",
+  "password": "password123",
+  "vehicle": {
+    "color": "Black",
+    "plate": "ABC123",
+    "capacity": 4,
+    "vehicleType": "car"
+  }
+}
+```
+
+#### 📤 Response & Status Codes
+
+#### 1️⃣ `201 Created` — Captain Registered Successfully
+
+##### Example Response:
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2YTU0MTIzNDU2Nzg5MDEyMzQ1NiJ9.signature",
+  "captain": {
+    "_id": "66b1a2345c67890123456789",
+    "fullname": {
+      "firstname": "John",
+      "lastname": "Doe"
+    },
+    "email": "captain@example.com",
+    "status": "inactive",
+    "vehicle": {
+      "color": "Black",
+      "plate": "ABC123",
+      "capacity": 4,
+      "vehicleType": "car"
+    }
+  }
+}
+```
+
+#### 2️⃣ `400 Bad Request` — Validation Failed or Captain Already Exists
+
+##### Example Response:
+
+```json
+{
+  "message": "Captain already exists"
+}
+```
+
+#### 3️⃣ `500 Internal Server Error` — Server Error
+
+##### Example Response:
+
+```json
+{
+  "message": "Internal server error"
+}
+```
+
+---
+
+### 2. Login Captain
+
+Authenticate an existing captain using email and password. Returns a JWT authentication token on success.
+
+- **Endpoint:** `/captains/login`
+- **HTTP Method:** `POST`
+- **Content-Type:** `application/json`
+
+#### 📥 Request Headers
+
+| Header         | Type   | Value              | Required |
+| :------------- | :----- | :----------------- | :------- |
+| `Content-Type` | String | `application/json` | Yes      |
+
+#### 📝 Request Body Requirements
+
+| Field      | Type   | Required | Constraints / Description      |
+| :--------- | :----- | :------- | :----------------------------- |
+| `email`    | String | **Yes**  | Must be a valid email address. |
+| `password` | String | **Yes**  | Minimum 6 characters long.     |
+
+##### Example Request Body:
+
+```json
+{
+  "email": "captain@example.com",
+  "password": "password123"
+}
+```
+
+#### 📤 Response & Status Codes
+
+#### 1️⃣ `200 OK` — Login Successful
+
+##### Example Response:
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2YTU0MTIzNDU2Nzg5MDEyMzQ1NiJ9.signature",
+  "captain": {
+    "_id": "66b1a2345c67890123456789",
+    "fullname": {
+      "firstname": "John",
+      "lastname": "Doe"
+    },
+    "email": "captain@example.com",
+    "status": "inactive"
+  }
+}
+```
+
+#### 2️⃣ `400 Bad Request` — Invalid Credentials
+
+##### Example Response:
+
+```json
+{
+  "message": "Invalid credentials"
+}
+```
+
+---
+
+### 3. Get Captain Profile
+
+Fetch the authenticated captain's profile details.
+
+- **Endpoint:** `/captains/profile`
+- **HTTP Method:** `GET`
+- **Authentication:** Required
+
+#### 📥 Request Headers
+
+| Header          | Type   | Value            | Required |
+| :-------------- | :----- | :--------------- | :------- |
+| `Authorization` | String | `Bearer <token>` | Yes      |
+
+> The token can also be sent in a cookie named `token`.
+
+#### 📤 Response & Status Codes
+
+#### 1️⃣ `200 OK` — Profile Retrieved Successfully
+
+##### Example Response:
+
+```json
+{
+  "captain": {
+    "_id": "66b1a2345c67890123456789",
+    "fullname": {
+      "firstname": "John",
+      "lastname": "Doe"
+    },
+    "email": "captain@example.com",
+    "status": "inactive"
+  }
+}
+```
+
+#### 2️⃣ `401 Unauthorized` — Invalid or Missing Token
+
+##### Example Response:
+
+```json
+{
+  "message": "No token provided"
+}
+```
+
+---
+
+### 4. Logout Captain
+
+Invalidate the current captain JWT token so it can no longer be used.
+
+- **Endpoint:** `/captains/logout`
+- **HTTP Method:** `GET`
+- **Authentication:** Required
+
+#### 📥 Request Headers
+
+| Header          | Type   | Value            | Required |
+| :-------------- | :----- | :--------------- | :------- |
+| `Authorization` | String | `Bearer <token>` | Yes      |
+
+> The token can also be sent in a cookie named `token`.
+
+#### 📤 Response & Status Codes
+
+#### 1️⃣ `200 OK` — Logout Successful
+
+##### Example Response:
+
+```json
+{
+  "message": "Logout successful"
+}
+```
+
+#### 2️⃣ `401 Unauthorized` — Invalid or Missing Token
+
+##### Example Response:
+
+```json
+{
+  "message": "Invalid token"
+}
+```

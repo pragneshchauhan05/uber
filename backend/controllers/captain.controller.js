@@ -1,5 +1,6 @@
 const captainModel = require("../models/captain.model");
 const captainService = require("../services/captain.service");
+const blacklistTokenModel = require("../models/blackListToken");
 const { validationResult } = require("express-validator");
 
 module.exports.registerCaptain = async (req, res) => {
@@ -31,6 +32,64 @@ module.exports.registerCaptain = async (req, res) => {
     return res.status(201).json({ token, captain });
   } catch (error) {
     console.error("Captain registration error:", error);
+    return res
+      .status(500)
+      .json({ message: error.message || "Internal server error" });
+  }
+};
+
+module.exports.loginCaptain = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email, password } = req.body;
+
+    const captain = await captainModel.findOne({ email }).select("+password");
+    if (!captain) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const isMatch = await captain.comparePassword(password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const token = captain.generateAuthToken();
+    res.cookie("token", token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: false,
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+    return res.status(200).json({ token, captain });
+  } catch (error) {
+    console.error("Captain login error:", error);
+    return res
+      .status(500)
+      .json({ message: error.message || "Internal server error" });
+  }
+};
+
+module.exports.getCaptainProfile = async (req, res) => {
+  res.status(200).json({ captain: req.captain });
+};
+
+module.exports.logoutCaptain = async (req, res) => {
+  try {
+    const token =
+      req.cookies?.token || req.headers.authorization?.split(" ")[1];
+
+    if (token) {
+      await blacklistTokenModel.create({ token });
+    }
+
+    res.clearCookie("token");
+    return res.status(200).json({ message: "Logout successful" });
+  } catch (error) {
+    console.error("Captain logout error:", error);
     return res
       .status(500)
       .json({ message: error.message || "Internal server error" });

@@ -25,7 +25,7 @@ router.post(
       .withMessage("vehicle capacity must be at least 1"),
     body("vehicle.vehicleType")
       .isIn(["car", "bike", "auto"])
-      .withMessage("vehicle type must be either car, bike or auto"),
+      .withMessage("vehicle type must be either car, moto or auto"),
   ],
   captainController.registerCaptain,
 );
@@ -43,5 +43,5 @@ router.post(
 
 router.get("/profile", authCaptain, captainController.getCaptainProfile);
 
-router.get("/logout", authCaptain, captainController.logoutCaptain);
+router.post("/logout", authCaptain, captainController.logoutCaptain);
 module.exports = router;

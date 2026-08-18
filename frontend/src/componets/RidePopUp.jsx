@@ -1,5 +1,6 @@
 import React from "react";
 import axios from "axios";
+import { getApiBaseUrl } from "../config";
 
 const RidePopUp = (props) => {
   const userFirstName = props.ride?.user?.fullname?.firstname || "User";
@@ -21,7 +22,8 @@ const RidePopUp = (props) => {
       }
 
       const response = await axios.post(
-        `${import.meta.env.VITE_BASE_URL}/rides/confirm`,
+        `${getApiBaseUrl()}/rides/confirm`,
+
         {
           rideId: props.ride._id,
         },

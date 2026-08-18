@@ -11,8 +11,9 @@ import WaitingForDriver from "../componets/WaitingForDriver";
 import LiveTraking from "../componets/LiveTraking";
 import { useEffect, useContext } from "react";
 import { SocketContext } from "../Context/SocketContext";
-import { UserDataContext } from "../Context/UserContext";
 import { useNavigate } from "react-router-dom";
+import { getApiBaseUrl } from "../config";
+
 
 const Home = () => {
   const [pickup, setPickup] = useState("");
@@ -85,8 +86,9 @@ const Home = () => {
 
     try {
       const response = await axios.get(
-        `${import.meta.env.VITE_BASE_URL}/rides/get-fare`,
+        `${getApiBaseUrl()}/rides/get-fare`,
         {
+
           params: { pickup, destination },
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -113,7 +115,7 @@ const Home = () => {
     debounceTimerRef.current = setTimeout(async () => {
       try {
         const response = await axios.get(
-          `${import.meta.env.VITE_BASE_URL}/maps/get-suggestion`,
+          `${getApiBaseUrl()}/maps/get-suggestion`,
           {
             params: { input: query },
             headers: {
@@ -154,7 +156,8 @@ const Home = () => {
 
   const createRide = async (vehicleType) => {
     const response = await axios.post(
-      `${import.meta.env.VITE_BASE_URL}/rides/create`,
+      `${getApiBaseUrl()}/rides/create`,
+
       {
         pickup,
         destination,

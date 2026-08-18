@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { CaptainDataContext } from "../Context/CaptainContext";
 
+import { getApiBaseUrl } from "../config";
+
 const CaptainLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,12 +18,11 @@ const CaptainLogin = () => {
     setIsLoading(true);
 
     try {
-      const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:4000";
+      const baseUrl = getApiBaseUrl();
       const response = await axios.post(
         `${baseUrl}/captains/login`,
         { email, password },
       );
-
 
       if (response.status === 200) {
         const data = response.data;
@@ -30,18 +31,18 @@ const CaptainLogin = () => {
         navigate("/captain-home");
       }
     } catch (err) {
+      console.error("Captain login error:", err);
       const resData = err.response?.data;
       const message =
         resData?.errors?.[0]?.msg ||
         resData?.message ||
-        "Login failed. Please try again.";
+        "Login failed. Please check your credentials and connection.";
       alert(message);
     } finally {
       setIsLoading(false);
-      setEmail("");
-      setPassword("");
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center items-center p-0 md:p-6">

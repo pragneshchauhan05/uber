@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { getApiBaseUrl } from "../config";
 
 const ConfirmRidePop = (props) => {
   const [otp, setOtp] = useState("");
@@ -13,7 +14,7 @@ const ConfirmRidePop = (props) => {
 
     try {
       const response = await axios.get(
-        `${import.meta.env.VITE_BASE_URL}/rides/start-ride`,
+        `${getApiBaseUrl()}/rides/start-ride`,
         {
           params: {
             rideId: props.ride?._id,
@@ -50,7 +51,7 @@ const ConfirmRidePop = (props) => {
     try {
       if (props.ride?._id) {
         await axios.post(
-          `${import.meta.env.VITE_BASE_URL}/rides/cancel-ride`,
+          `${getApiBaseUrl()}/rides/cancel-ride`,
           { rideId: props.ride._id },
           {
             headers: {
@@ -65,6 +66,7 @@ const ConfirmRidePop = (props) => {
       props.setConfirmRidePopUpPanel(false);
     }
   };
+
 
   return (
     <div>

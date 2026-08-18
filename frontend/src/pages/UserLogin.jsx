@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { UserDataContext } from "../Context/UserContext";
 
+import { getApiBaseUrl } from "../config";
+
 const UserLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,12 +22,11 @@ const UserLogin = () => {
     };
 
     try {
-      const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:4000";
+      const baseUrl = getApiBaseUrl();
       const response = await axios.post(
         `${baseUrl}/users/login`,
         userData,
       );
-
 
       if (response.status === 200) {
         const data = response.data;
@@ -34,18 +35,18 @@ const UserLogin = () => {
         navigate("/home");
       }
     } catch (err) {
+      console.error("User login error:", err);
       const resData = err.response?.data;
       const message =
         resData?.errors?.[0]?.msg ||
         resData?.message ||
-        "Login failed. Please try again.";
+        "Login failed. Please check your credentials and connection.";
       alert(message);
     } finally {
       setIsLoading(false);
-      setEmail("");
-      setPassword("");
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center items-center p-0 md:p-6">

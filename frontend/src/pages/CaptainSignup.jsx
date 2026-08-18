@@ -2,6 +2,7 @@ import React, { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { CaptainDataContext } from "../Context/CaptainContext";
+import { getApiBaseUrl } from "../config";
 
 const CaptainSignup = () => {
   const [firstName, setFirstName] = useState("");
@@ -15,7 +16,6 @@ const CaptainSignup = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const [, setCaptain] = useContext(CaptainDataContext);
-
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -38,8 +38,9 @@ const CaptainSignup = () => {
     };
 
     try {
+      const baseUrl = getApiBaseUrl();
       const response = await axios.post(
-        `${import.meta.env.VITE_BASE_URL}/captains/register`,
+        `${baseUrl}/captains/register`,
         newCaptain,
       );
 
@@ -54,7 +55,7 @@ const CaptainSignup = () => {
       const message =
         resData?.errors?.[0]?.msg ||
         resData?.message ||
-        "Unable to register. Check your backend or network.";
+        "Unable to register. Check your credentials or connection.";
       alert(message);
     } finally {
       setIsLoading(false);
@@ -62,8 +63,8 @@ const CaptainSignup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex justify-center items-center p-0 md:p-6">
-      <div className="w-full max-w-md min-h-screen md:min-h-[820px] md:h-auto bg-white md:rounded-3xl shadow-xl p-8 flex flex-col justify-between">
+    <div className="min-h-[100dvh] w-screen bg-gray-50 flex justify-center items-center p-4 sm:p-6">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-6 sm:p-8 flex flex-col justify-between border border-gray-100 min-h-[620px]">
         <div>
           <div className="flex items-center justify-between mb-6">
             <img className="w-20" src="/uber.png" alt="Uber" />

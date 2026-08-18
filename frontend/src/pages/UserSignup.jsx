@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState, useContext } from "react";
 import axios from "axios";
 import { UserDataContext } from "../Context/UserContext";
+import { getApiBaseUrl } from "../config";
 
 const UserSignup = () => {
   const [firstName, setFirstName] = useState("");
@@ -27,7 +28,7 @@ const UserSignup = () => {
     };
 
     try {
-      const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:4000";
+      const baseUrl = getApiBaseUrl();
       const response = await axios.post(`${baseUrl}/users/register`, newUser);
 
       if (response.status === 201) {
@@ -40,7 +41,7 @@ const UserSignup = () => {
       console.error("Signup error:", error);
       alert(
         error?.response?.data?.message ||
-          "Unable to register. Check your backend or network.",
+          "Unable to register. Check your credentials or connection.",
       );
     } finally {
       setIsLoading(false);
@@ -48,8 +49,8 @@ const UserSignup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex justify-center items-center p-0 md:p-6">
-      <div className="w-full max-w-md min-h-screen md:min-h-[780px] md:h-auto bg-white md:rounded-3xl shadow-xl p-8 flex flex-col justify-between">
+    <div className="min-h-[100dvh] w-screen bg-gray-50 flex justify-center items-center p-4 sm:p-6">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-6 sm:p-8 flex flex-col justify-between border border-gray-100 min-h-[580px]">
         <div>
           <div className="flex items-center justify-between mb-6">
             <img className="w-20" src="/uber.png" alt="Uber" />

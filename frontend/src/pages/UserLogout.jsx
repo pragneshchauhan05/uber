@@ -1,6 +1,7 @@
 import axios from "axios";
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { getApiBaseUrl } from "../config";
 
 const UserLogout = () => {
   const token = localStorage.getItem("token");
@@ -8,7 +9,8 @@ const UserLogout = () => {
 
   useEffect(() => {
     axios
-      .get(`${import.meta.env.VITE_BASE_URL}/users/logout`, {
+      .get(`${getApiBaseUrl()}/users/logout`, {
+
         headers: {
           Authorization: `Bearer ${token}`,
         },

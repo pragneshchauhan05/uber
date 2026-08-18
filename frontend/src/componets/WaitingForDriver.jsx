@@ -1,5 +1,6 @@
 import React from "react";
 import axios from "axios";
+import { getApiBaseUrl } from "../config";
 
 const WaitingForDriver = (props) => {
   const captainFirstName =
@@ -16,7 +17,8 @@ const WaitingForDriver = (props) => {
     try {
       if (props.ride?._id) {
         await axios.post(
-          `${import.meta.env.VITE_BASE_URL}/rides/cancel-ride`,
+          `${getApiBaseUrl()}/rides/cancel-ride`,
+
           { rideId: props.ride._id },
           {
             headers: {

@@ -1,6 +1,7 @@
 import axios from "axios";
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { getApiBaseUrl } from "../config";
 
 const CaptainLogout = () => {
   const token = localStorage.getItem("captainToken");
@@ -9,7 +10,8 @@ const CaptainLogout = () => {
   useEffect(() => {
     axios
       .post(
-        `${import.meta.env.VITE_BASE_URL}/captains/logout`,
+        `${getApiBaseUrl()}/captains/logout`,
+
         {},
         {
           headers: {

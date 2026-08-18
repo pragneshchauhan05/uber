@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { getApiBaseUrl } from "../config";
 
 const FinishRide = (props) => {
   const navigate = useNavigate();
@@ -19,7 +20,8 @@ const FinishRide = (props) => {
     try {
       if (props.ride?._id) {
         await axios.post(
-          `${import.meta.env.VITE_BASE_URL}/rides/end-ride`,
+          `${getApiBaseUrl()}/rides/end-ride`,
+
           {
             rideId: props.ride._id,
           },

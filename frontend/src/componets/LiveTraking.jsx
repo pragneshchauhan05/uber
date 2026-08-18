@@ -24,7 +24,7 @@ const LiveTraking = () => {
         });
       },
       (err) => console.error("Error getting initial location:", err),
-      { enableHighAccuracy: true },
+      { enableHighAccuracy: false, timeout: 3000, maximumAge: 30000 },
     );
 
     const watchId = navigator.geolocation.watchPosition(
@@ -37,9 +37,9 @@ const LiveTraking = () => {
       },
       (err) => console.error("Location watch error:", err),
       {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
+        enableHighAccuracy: false,
+        timeout: 5000,
+        maximumAge: 10000,
       },
     );
 

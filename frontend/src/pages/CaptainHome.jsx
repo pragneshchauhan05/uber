@@ -1,14 +1,10 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import CaptainDetails from "../componets/CaptainDetails";
 import RidePopUp from "../componets/RidePopUp";
 import ConfirmRidePop from "../componets/ConfirmRidePop";
 import LiveTraking from "../componets/LiveTraking";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
-import { useState } from "react";
-import { useRef } from "react";
-import { useEffect, useContext } from "react";
 import { SocketContext } from "../Context/SocketContext";
 import { CaptainDataContext } from "../Context/CaptainContext";
 
@@ -59,10 +55,18 @@ const CaptainHome = () => {
       setConfirmRidePopUpPanel(false);
     });
 
+    socket.on("ride-cancelled", () => {
+      setRidePopUpPanel(false);
+      setConfirmRidePopUpPanel(false);
+      setRide(null);
+    });
+
     return () => {
       socket.off("ride_request");
+      socket.off("ride-cancelled");
     };
   }, [socket]);
+
 
   useGSAP(
     function () {
@@ -95,35 +99,53 @@ const CaptainHome = () => {
   );
 
   return (
-    <div className="h-screen">
-      <div className="fixed p-3 top-0 flex items-center justify-between p-4 w-full z-10">
-        <img className="w-16" src="/uber.png" alt="" />
-      </div>
-      <div className="h-3/5">
-        <LiveTraking />
-      </div>
+    <div className="min-h-screen bg-gray-900 flex justify-center items-center p-0 md:p-6">
+      <div className="w-full max-w-md h-screen md:h-[840px] md:rounded-3xl shadow-2xl overflow-hidden relative flex flex-col bg-white">
+        {/* Top Header */}
+        <div className="absolute top-5 left-5 right-5 z-20 flex items-center justify-between pointer-events-none">
+          <img
+            className="w-16 drop-shadow-md pointer-events-auto"
+            src="/uber.png"
+            alt="Uber"
+          />
+          <div className="bg-emerald-600 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-lg pointer-events-auto flex items-center gap-1.5">
+            <span className="w-2 h-2 bg-white rounded-full animate-ping"></span>
+            Online & Ready
+          </div>
+        </div>
 
-      <div className="h-2/5 p-4">
-        <CaptainDetails />
-      </div>
-      <div
-        ref={ridePopUpPanelRef}
-        className="fixed w-full bg-white z-10 translate-y-full bottom-0  px-3 py-6 pt-12"
-      >
-        <RidePopUp
-          ride={ride}
-          setRidePopUpPanel={setRidePopUpPanel}
-          setConfirmRidePopUpPanel={setConfirmRidePopUpPanel}
-        />
-      </div>
-      <div
-        ref={confirmRidePopUpPanelRef}
-        className="fixed w-full bg-white z-10 h-screen translate-y-full bottom-0  px-3 py-6 pt-12"
-      >
-        <ConfirmRidePop
-          ride={ride}
-          setConfirmRidePopUpPanel={setConfirmRidePopUpPanel}
-        />
+        {/* Live Map */}
+        <div className="h-[60%] w-full relative">
+          <LiveTraking />
+        </div>
+
+        {/* Driver Dashboard Panel */}
+        <div className="h-[40%] bg-white p-6 rounded-t-3xl shadow-2xl -mt-6 z-10 border-t border-gray-100 flex flex-col justify-between">
+          <CaptainDetails />
+        </div>
+
+        {/* Ride Request Sheet */}
+        <div
+          ref={ridePopUpPanelRef}
+          className="fixed md:absolute w-full max-w-md bg-white z-30 translate-y-full bottom-0 px-5 py-6 rounded-t-3xl shadow-2xl border-t border-gray-100"
+        >
+          <RidePopUp
+            ride={ride}
+            setRidePopUpPanel={setRidePopUpPanel}
+            setConfirmRidePopUpPanel={setConfirmRidePopUpPanel}
+          />
+        </div>
+
+        {/* Confirm OTP Sheet */}
+        <div
+          ref={confirmRidePopUpPanelRef}
+          className="fixed md:absolute w-full max-w-md bg-white z-30 translate-y-full bottom-0 px-5 py-6 rounded-t-3xl shadow-2xl border-t border-gray-100 max-h-screen overflow-y-auto"
+        >
+          <ConfirmRidePop
+            ride={ride}
+            setConfirmRidePopUpPanel={setConfirmRidePopUpPanel}
+          />
+        </div>
       </div>
     </div>
   );

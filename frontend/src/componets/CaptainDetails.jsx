@@ -16,42 +16,51 @@ const CaptainDetails = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mt-3">
+      {/* Driver Info Header */}
+      <div className="flex justify-between items-center bg-gray-50 p-4 rounded-2xl border border-gray-100 mb-4">
         <div className="flex items-center gap-3">
           <img
-            className="h-10 w-10 rounded-full object-cover"
-            src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?fm=jpg&q=60&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8cmFuZG9tJTIwcGVvcGxlfGVufDB8fDB8fHwwx"
+            className="h-12 w-12 rounded-full object-cover border-2 border-white shadow-sm"
+            src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?fm=jpg&q=60&w=3000&auto=format&fit=crop"
             alt={name}
           />
           <div>
-            <h4 className="text-lg font-medium capitalize">{name}</h4>
-            <p className="text-xs text-gray-500 uppercase">
-              {captain?.vehicle?.plate || ""}
+            <h4 className="text-base font-bold text-gray-900 capitalize">{name}</h4>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              {captain?.vehicle?.plate || "GJ01AB1234"}
             </p>
           </div>
         </div>
-        <div>
-          <h4 className="text-xl font-medium">₹{captain?.earnings ?? "295.20"}</h4>
-          <p className="text-sm text-gray-600 text-end">Earned today</p>
+        <div className="text-right">
+          <h4 className="text-xl font-extrabold text-gray-900">₹{captain?.earnings ?? "295.20"}</h4>
+          <p className="text-xs font-semibold text-emerald-600">Earned today</p>
         </div>
       </div>
-      <div>
-        <div className="flex w-full justify-around mt-7 pr-5">
-          <div className="text-center">
-            <i className="text-2xl font-thin ri-timer-line"></i>
-            <h5 className="text-lg font-medium">{captain?.hoursOnline ?? "10.5"}</h5>
-            <p className="text-sm text-gray-600">Hours Online</p>
+
+      {/* Driver Performance Metrics */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-gray-50 p-3.5 rounded-2xl border border-gray-100 text-center">
+          <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mx-auto mb-1">
+            <i className="ri-timer-line text-lg"></i>
           </div>
-          <div className="text-center">
-            <i className="text-2xl font-thin ri-speed-up-line"></i>
-            <h5 className="text-lg font-medium">{captain?.totalDistance ?? "10.5"}</h5>
-            <p className="text-sm text-gray-600">KM Driven</p>
+          <h5 className="text-base font-bold text-gray-900">{captain?.hoursOnline ?? "10.5"}h</h5>
+          <p className="text-[11px] font-semibold text-gray-500">Hours Online</p>
+        </div>
+
+        <div className="bg-gray-50 p-3.5 rounded-2xl border border-gray-100 text-center">
+          <div className="w-8 h-8 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center mx-auto mb-1">
+            <i className="ri-speed-up-line text-lg"></i>
           </div>
-          <div className="text-center">
-            <i className="text-2xl font-thin ri-booklet-line"></i>
-            <h5 className="text-lg font-medium">{captain?.rating ?? "4.9"}</h5>
-            <p className="text-sm text-gray-600">Rating</p>
+          <h5 className="text-base font-bold text-gray-900">{captain?.totalDistance ?? "10.5"} km</h5>
+          <p className="text-[11px] font-semibold text-gray-500">KM Driven</p>
+        </div>
+
+        <div className="bg-gray-50 p-3.5 rounded-2xl border border-gray-100 text-center">
+          <div className="w-8 h-8 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center mx-auto mb-1">
+            <i className="ri-star-fill text-lg"></i>
           </div>
+          <h5 className="text-base font-bold text-gray-900">{captain?.rating ?? "4.9"}</h5>
+          <p className="text-[11px] font-semibold text-gray-500">Rating</p>
         </div>
       </div>
     </div>
@@ -59,3 +68,4 @@ const CaptainDetails = () => {
 };
 
 export default CaptainDetails;
+

@@ -138,5 +138,41 @@ module.exports.endRide = async (req, res) => {
   }
 };
 
+module.exports.cancelRide = async (req, res) => {
+  const { rideId } = req.body;
+
+  try {
+    const ride = await rideModel
+      .findById(rideId)
+      .populate("user")
+      .populate("captain");
+
+    if (ride) {
+      ride.status = "cancelled";
+      await ride.save();
+
+      if (ride.user && ride.user.socketId) {
+        sendMasegeToSocketId(ride.user.socketId, {
+          event: "ride-cancelled",
+          data: ride,
+        });
+      }
+
+      if (ride.captain && ride.captain.socketId) {
+        sendMasegeToSocketId(ride.captain.socketId, {
+          event: "ride-cancelled",
+          data: ride,
+        });
+      }
+    }
+
+    return res.status(200).json({ message: "Ride cancelled successfully", ride });
+  } catch (err) {
+    console.error("Error cancelling ride:", err);
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+
 
 

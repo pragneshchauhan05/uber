@@ -34,11 +34,12 @@ const CaptainLogin = () => {
       console.error("Captain login error:", err);
       const resData = err.response?.data;
       const message =
-        resData?.errors?.[0]?.msg ||
         resData?.message ||
+        resData?.errors?.[0]?.msg ||
         "Login failed. Please check your credentials and connection.";
       alert(message);
     } finally {
+
       setIsLoading(false);
     }
   };

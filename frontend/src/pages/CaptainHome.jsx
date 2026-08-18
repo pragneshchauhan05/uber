@@ -1,19 +1,68 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import CaptainDetails from "../componets/Captaindetails";
+import CaptainDetails from "../componets/CaptainDetails";
 import RidePopUp from "../componets/RidePopUp";
 import ConfirmRidePop from "../componets/ConfirmRidePop";
+import LiveTraking from "../componets/LiveTraking";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { useState } from "react";
 import { useRef } from "react";
+import { useEffect, useContext } from "react";
+import { SocketContext } from "../Context/SocketContext";
+import { CaptainDataContext } from "../Context/CaptainContext";
 
 const CaptainHome = () => {
-  const [ridePopUpPanel, setRidePopUpPanel] = useState(true);
+  const [ridePopUpPanel, setRidePopUpPanel] = useState(false);
   const [confirmRidePopUpPanel, setConfirmRidePopUpPanel] = useState(false);
+  const [ride, setRide] = useState(null);
 
   const ridePopUpPanelRef = useRef(null);
   const confirmRidePopUpPanelRef = useRef(null);
+
+  const { socket } = useContext(SocketContext);
+  const [captain] = useContext(CaptainDataContext);
+
+  useEffect(() => {
+    if (captain && captain._id) {
+      socket.emit("join", {
+        userId: captain._id,
+        userType: "captain",
+      });
+    }
+
+    const updateLocation = () => {
+      if (navigator.geolocation && captain?._id) {
+        navigator.geolocation.getCurrentPosition((position) => {
+          socket.emit("update-location-captain", {
+            userId: captain._id,
+            location: {
+              ltd: position.coords.latitude,
+              lng: position.coords.longitude,
+            },
+          });
+        });
+      }
+    };
+
+    const updateLocationInterval = setInterval(updateLocation, 10000);
+    updateLocation();
+
+    return () => clearInterval(updateLocationInterval);
+  }, [captain, socket]);
+
+  useEffect(() => {
+    socket.on("ride_request", (data) => {
+      console.log("Ride request received", data);
+      setRide(data);
+      setRidePopUpPanel(true);
+      setConfirmRidePopUpPanel(false);
+    });
+
+    return () => {
+      socket.off("ride_request");
+    };
+  }, [socket]);
 
   useGSAP(
     function () {
@@ -47,21 +96,11 @@ const CaptainHome = () => {
 
   return (
     <div className="h-screen">
-      <div className="fixed p-3 top-0 flex items-center justify-between p-4 w-full">
+      <div className="fixed p-3 top-0 flex items-center justify-between p-4 w-full z-10">
         <img className="w-16" src="/uber.png" alt="" />
-        <Link
-          to="/home"
-          className=" h-10 w-10 bg-white flex items-center justify-center rounded-full"
-        >
-          <i className="font-medium text-lg ri-home-5-line"></i>
-        </Link>
       </div>
       <div className="h-3/5">
-        <img
-          className="h-full w-full object-cover"
-          src="https://s3-eu-west-1.amazonaws.com/adminjs-blog/2023/05/0_HzyjQ7h0baWklQeF.webp"
-          alt=""
-        />
+        <LiveTraking />
       </div>
 
       <div className="h-2/5 p-4">
@@ -72,6 +111,7 @@ const CaptainHome = () => {
         className="fixed w-full bg-white z-10 translate-y-full bottom-0  px-3 py-6 pt-12"
       >
         <RidePopUp
+          ride={ride}
           setRidePopUpPanel={setRidePopUpPanel}
           setConfirmRidePopUpPanel={setConfirmRidePopUpPanel}
         />
@@ -80,7 +120,10 @@ const CaptainHome = () => {
         ref={confirmRidePopUpPanelRef}
         className="fixed w-full bg-white z-10 h-screen translate-y-full bottom-0  px-3 py-6 pt-12"
       >
-        <ConfirmRidePop setConfirmRidePopUpPanel={setConfirmRidePopUpPanel} />
+        <ConfirmRidePop
+          ride={ride}
+          setConfirmRidePopUpPanel={setConfirmRidePopUpPanel}
+        />
       </div>
     </div>
   );

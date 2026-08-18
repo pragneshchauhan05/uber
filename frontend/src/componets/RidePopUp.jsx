@@ -1,5 +1,48 @@
 import React from "react";
+import axios from "axios";
+
 const RidePopUp = (props) => {
+  const userFirstName = props.ride?.user?.fullname?.firstname || "User";
+  const userLastName = props.ride?.user?.fullname?.lastname || "";
+  const userName = `${userFirstName} ${userLastName}`.trim();
+
+  const distanceKm = props.ride?.distance
+    ? typeof props.ride.distance === "number"
+      ? (props.ride.distance / 1000).toFixed(1) + " km"
+      : props.ride.distance
+    : "2.2 km";
+
+  const confirmRide = async () => {
+    try {
+      if (!props.ride?._id) {
+        props.setConfirmRidePopUpPanel(true);
+        props.setRidePopUpPanel(false);
+        return;
+      }
+
+      const response = await axios.post(
+        `${import.meta.env.VITE_BASE_URL}/rides/confirm`,
+        {
+          rideId: props.ride._id,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("captainToken")}`,
+          },
+        },
+      );
+
+      if (response.status === 200) {
+        props.setConfirmRidePopUpPanel(true);
+        props.setRidePopUpPanel(false);
+      }
+    } catch (error) {
+      console.error("Error confirming ride:", error);
+      props.setConfirmRidePopUpPanel(true);
+      props.setRidePopUpPanel(false);
+    }
+  };
+
   return (
     <div>
       <div>
@@ -17,46 +60,51 @@ const RidePopUp = (props) => {
             <img
               className="h-10 w-10 rounded-full object-cover"
               src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?fm=jpg&q=60&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8cmFuZG9tJTIwcGVvcGxlfGVufDB8fDB8fHww"
-              alt=""
+              alt={userName}
             />
-            <h2 className="text-xl font-semibold">Harsh Patel</h2>
+            <h2 className="text-xl font-semibold">{userName}</h2>
           </div>
-          <h5 className="text-lg font-semibold">2.2km</h5>
+          <h5 className="text-lg font-semibold">{distanceKm}</h5>
         </div>
         <div className="flex justify-between flex-col items-center gap-5">
           <div className="w-full">
-            <div className="flex item-center gap-5 p-3  ">
-              <i className=" ri-map-pin-2-fill"></i>
+            <div className="flex item-center gap-5 p-3">
+              <i className="ri-map-pin-2-fill"></i>
               <div>
-                <h3 className="text-lg font-medium">103,Amrut flet</h3>
+                <h3 className="text-lg font-medium">
+                  {props.ride?.pickup
+                    ? props.ride.pickup.split(",")[0]
+                    : "Pickup Location"}
+                </h3>
                 <p className="text-sm text-gray-600 -m-1">
-                  New triveni SCO. katargam Surat
+                  {props.ride?.pickup || ""}
                 </p>
               </div>
             </div>
-            <div className="flex item-center gap-5 p-3  mt-3 ">
+            <div className="flex item-center gap-5 p-3 mt-3">
               <i className="ri-map-pin-user-fill"></i>
               <div>
-                <h3 className="text-lg font-medium">103,Amrut flet</h3>
+                <h3 className="text-lg font-medium">
+                  {props.ride?.destination
+                    ? props.ride.destination.split(",")[0]
+                    : "Destination Location"}
+                </h3>
                 <p className="text-sm text-gray-600 -m-1">
-                  New triveni SCO. katargam Surat
+                  {props.ride?.destination || ""}
                 </p>
               </div>
             </div>
-            <div className="flex item-center gap-5 p-3 mt-3 ">
+            <div className="flex item-center gap-5 p-3 mt-3">
               <i className="ri-wallet-3-fill"></i>
               <div>
-                <h3 className="text-lg font-medium">₹193.15</h3>
-                <p className="text-sm text-gray-600 -m-1">Cash Cash</p>
+                <h3 className="text-lg font-medium">₹{props.ride?.fare ?? "0"}</h3>
+                <p className="text-sm text-gray-600 -m-1">Cash</p>
               </div>
             </div>
           </div>
           <div className="flex items-center justify-between gap-3 mt-5">
             <button
-              onClick={() => {
-                props.setConfirmRidePopUpPanel(true);
-                props.setRidePopUpPanel(false);
-              }}
+              onClick={confirmRide}
               className="flex-1 bg-green-600 text-white font-semibold p-2 rounded-lg"
             >
               Accept
@@ -75,4 +123,6 @@ const RidePopUp = (props) => {
     </div>
   );
 };
+
 export default RidePopUp;
+

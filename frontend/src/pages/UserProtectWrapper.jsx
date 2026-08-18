@@ -12,12 +12,14 @@ const UserProtectWrapper = ({ children }) => {
   useEffect(() => {
     if (!token) return;
 
+    const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:4000";
     axios
-      .get(`${import.meta.env.VITE_BASE_URL}/users/profile`, {
+      .get(`${baseUrl}/users/profile`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       })
+
       .then((res) => {
         setUser(res.data.user);
         setIsLoading(false);

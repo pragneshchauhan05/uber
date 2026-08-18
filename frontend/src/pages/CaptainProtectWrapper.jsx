@@ -12,12 +12,14 @@ const CaptainProtectWrapper = ({ children }) => {
   useEffect(() => {
     if (!token) return;
 
+    const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:4000";
     axios
-      .get(`${import.meta.env.VITE_BASE_URL}/captains/profile`, {
+      .get(`${baseUrl}/captains/profile`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       })
+
       .then((res) => {
         setCaptain(res.data.captain);
         setIsLoading(false);

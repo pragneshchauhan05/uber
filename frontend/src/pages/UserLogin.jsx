@@ -20,10 +20,12 @@ const UserLogin = () => {
     };
 
     try {
+      const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:4000";
       const response = await axios.post(
-        `${import.meta.env.VITE_BASE_URL}/users/login`,
+        `${baseUrl}/users/login`,
         userData,
       );
+
 
       if (response.status === 200) {
         const data = response.data;

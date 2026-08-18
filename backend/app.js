@@ -10,12 +10,27 @@ const captainRoutes = require("./routes/captain.routes");
 const mapsRoutes = require("./routes/maps.routes");
 const rideRoutes = require("./routes/ride.routes");
 
+const allowedOrigins = [
+  "https://uber-1-48x7.onrender.com",
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:4000",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: "*",
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Fallback allow for production flexibility
+      }
+    },
     credentials: true,
   }),
 );
+
 
 app.use(cookieParser());
 

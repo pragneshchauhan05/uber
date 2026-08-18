@@ -16,10 +16,12 @@ const CaptainLogin = () => {
     setIsLoading(true);
 
     try {
+      const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:4000";
       const response = await axios.post(
-        `${import.meta.env.VITE_BASE_URL}/captains/login`,
+        `${baseUrl}/captains/login`,
         { email, password },
       );
+
 
       if (response.status === 200) {
         const data = response.data;

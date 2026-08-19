@@ -85,15 +85,27 @@ const Home = () => {
   }, [location.state]);
 
   useEffect(() => {
-    sessionStorage.setItem("home_pickup", pickup);
-    sessionStorage.setItem("home_destination", destination);
-    sessionStorage.setItem("home_vehiclePanelOpen", vehiclePanelOpen);
-    sessionStorage.setItem("home_confirmedRide", confirmedRide);
-    sessionStorage.setItem("home_vehicleFound", vehicleFound);
-    sessionStorage.setItem("home_waitingForDriver", waitingForDriver);
-    sessionStorage.setItem("home_fare", JSON.stringify(fare));
-    if (vehicleType) sessionStorage.setItem("home_vehicleType", vehicleType);
-    if (ride) sessionStorage.setItem("home_ride", JSON.stringify(ride));
+    if (pickup || destination || vehiclePanelOpen || confirmedRide || vehicleFound || waitingForDriver) {
+      sessionStorage.setItem("home_pickup", pickup);
+      sessionStorage.setItem("home_destination", destination);
+      sessionStorage.setItem("home_vehiclePanelOpen", vehiclePanelOpen);
+      sessionStorage.setItem("home_confirmedRide", confirmedRide);
+      sessionStorage.setItem("home_vehicleFound", vehicleFound);
+      sessionStorage.setItem("home_waitingForDriver", waitingForDriver);
+      sessionStorage.setItem("home_fare", JSON.stringify(fare));
+      if (vehicleType) sessionStorage.setItem("home_vehicleType", vehicleType);
+      if (ride) sessionStorage.setItem("home_ride", JSON.stringify(ride));
+    } else {
+      sessionStorage.removeItem("home_pickup");
+      sessionStorage.removeItem("home_destination");
+      sessionStorage.removeItem("home_vehiclePanelOpen");
+      sessionStorage.removeItem("home_confirmedRide");
+      sessionStorage.removeItem("home_vehicleFound");
+      sessionStorage.removeItem("home_waitingForDriver");
+      sessionStorage.removeItem("home_fare");
+      sessionStorage.removeItem("home_vehicleType");
+      sessionStorage.removeItem("home_ride");
+    }
   }, [pickup, destination, vehiclePanelOpen, confirmedRide, vehicleFound, waitingForDriver, fare, vehicleType, ride]);
 
   useEffect(() => {
@@ -113,7 +125,7 @@ const Home = () => {
     });
 
     socket.on("ride-started", (rideData) => {
-      setWaitingForDriver(false);
+      resetAllPanels();
       navigate("/riding", { state: { ride: rideData } });
     });
 

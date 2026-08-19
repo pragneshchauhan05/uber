@@ -13,6 +13,9 @@ const CaptainSignup = () => {
   const [vehiclePlate, setVehiclePlate] = useState("");
   const [vehicleCapacity, setVehicleCapacity] = useState("");
   const [vehicleType, setVehicleType] = useState("");
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [serverError, setServerError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const [, setCaptain] = useContext(CaptainDataContext);
@@ -22,8 +25,127 @@ const CaptainSignup = () => {
     return <Navigate to="/captain-home" replace />;
   }
 
+  const validateFirstName = (val) => {
+    if (!val.trim()) return "First name is required.";
+    if (val.trim().length < 3) return "First name must be at least 3 characters.";
+    return "";
+  };
+
+  const validateEmail = (val) => {
+    if (!val.trim()) return "Email address is required.";
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(val.trim())) return "Please enter a valid email address.";
+    return "";
+  };
+
+  const validatePassword = (val) => {
+    if (!val) return "Password is required.";
+    if (val.length < 6) return "Password must be at least 6 characters.";
+    return "";
+  };
+
+  const validateVehicleColor = (val) => {
+    if (!val.trim()) return "Vehicle color is required.";
+    const colorRegex = /^[A-Za-z\s]+$/;
+    if (!colorRegex.test(val.trim())) return "Color must contain only letters (e.g. Black, White).";
+    return "";
+  };
+
+  const validateVehiclePlate = (val) => {
+    if (!val.trim()) return "Number plate is required.";
+    const plateRegex = /^[A-Za-z]{2}\s?\d{2}\s?[A-Za-z]{1,2}\s?\d{4,}$/;
+    if (!plateRegex.test(val.trim())) {
+      return "Format must be like: GJ 05 AH 5358";
+    }
+    return "";
+  };
+
+  const validateVehicleCapacity = (val) => {
+    if (!val) return "Capacity is required.";
+    const num = Number(val);
+    if (isNaN(num) || num < 1) return "Capacity must be at least 1.";
+    if (num > 6) return "Max capacity is 6 passengers.";
+    return "";
+  };
+
+  const validateVehicleType = (val) => {
+    if (!val) return "Please select a vehicle type.";
+    return "";
+  };
+
+  const validateAll = () => {
+    const errs = {
+      firstName: validateFirstName(firstName),
+      email: validateEmail(email),
+      password: validatePassword(password),
+      vehicleColor: validateVehicleColor(vehicleColor),
+      vehiclePlate: validateVehiclePlate(vehiclePlate),
+      vehicleCapacity: validateVehicleCapacity(vehicleCapacity),
+      vehicleType: validateVehicleType(vehicleType),
+    };
+    setErrors(errs);
+    setTouched({
+      firstName: true,
+      email: true,
+      password: true,
+      vehicleColor: true,
+      vehiclePlate: true,
+      vehicleCapacity: true,
+      vehicleType: true,
+    });
+    return Object.values(errs).every((x) => x === "");
+  };
+
+  const handleBlur = (field) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    if (field === "firstName") setErrors((prev) => ({ ...prev, firstName: validateFirstName(firstName) }));
+    if (field === "email") setErrors((prev) => ({ ...prev, email: validateEmail(email) }));
+    if (field === "password") setErrors((prev) => ({ ...prev, password: validatePassword(password) }));
+    if (field === "vehicleColor") setErrors((prev) => ({ ...prev, vehicleColor: validateVehicleColor(vehicleColor) }));
+    if (field === "vehiclePlate") setErrors((prev) => ({ ...prev, vehiclePlate: validateVehiclePlate(vehiclePlate) }));
+    if (field === "vehicleCapacity") setErrors((prev) => ({ ...prev, vehicleCapacity: validateVehicleCapacity(vehicleCapacity) }));
+    if (field === "vehicleType") setErrors((prev) => ({ ...prev, vehicleType: validateVehicleType(vehicleType) }));
+  };
+
+  const handleVehicleTypeChange = (e) => {
+    const selectedType = e.target.value;
+    setVehicleType(selectedType);
+    setServerError("");
+
+    if (selectedType === "motorcycle") {
+      setVehicleCapacity("1");
+      setErrors((prev) => ({ ...prev, vehicleCapacity: "" }));
+    } else if (selectedType === "auto") {
+      setVehicleCapacity("3");
+      setErrors((prev) => ({ ...prev, vehicleCapacity: "" }));
+    } else if (selectedType === "car") {
+      setVehicleCapacity("4");
+      setErrors((prev) => ({ ...prev, vehicleCapacity: "" }));
+    }
+
+    if (touched.vehicleType) {
+      setErrors((prev) => ({ ...prev, vehicleType: validateVehicleType(selectedType) }));
+    }
+  };
+
+  const handleCapacityChange = (e) => {
+    let val = e.target.value;
+    if (val !== "" && Number(val) > 6) {
+      val = "6";
+    }
+    setVehicleCapacity(val);
+    setServerError("");
+    if (touched.vehicleCapacity) {
+      setErrors((prev) => ({ ...prev, vehicleCapacity: validateVehicleCapacity(val) }));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setServerError("");
+
+    if (!validateAll()) return;
+
     setIsLoading(true);
 
     const newCaptain = {
@@ -59,8 +181,8 @@ const CaptainSignup = () => {
       const message =
         resData?.errors?.[0]?.msg ||
         resData?.message ||
-        "Unable to register. Check your credentials or connection.";
-      alert(message);
+        "Unable to register as captain. Please check your details.";
+      setServerError(message);
     } finally {
       setIsLoading(false);
     }
@@ -77,47 +199,97 @@ const CaptainSignup = () => {
             </span>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {serverError && (
+            <div className="mb-5 p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2 animate-shake">
+              <i className="ri-error-warning-fill text-lg text-red-500 shrink-0"></i>
+              <span>{serverError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div>
               <label className="block text-sm font-semibold text-gray-800 mb-1">
                 Personal Information
               </label>
               <div className="grid grid-cols-2 gap-3 mb-3">
-                <input
-                  type="text"
-                  value={firstName}
-                  className="w-full bg-gray-100/80 border border-gray-200 rounded-xl px-4 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none transition-all duration-200"
-                  required
-                  placeholder="First name"
-                  onChange={(e) => setFirstName(e.target.value)}
-                />
-                <input
-                  type="text"
-                  value={lastName}
-                  className="w-full bg-gray-100/80 border border-gray-200 rounded-xl px-4 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none transition-all duration-200"
-                  required
-                  placeholder="Last name"
-                  onChange={(e) => setLastName(e.target.value)}
-                />
+                <div>
+                  <input
+                    type="text"
+                    value={firstName}
+                    className={`w-full bg-gray-100/80 border rounded-xl px-4 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none transition-all duration-200 ${
+                      touched.firstName && errors.firstName
+                        ? "border-red-500 bg-red-50/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                        : "border-gray-200 focus:border-black focus:ring-2 focus:ring-black/10"
+                    }`}
+                    placeholder="First name"
+                    onChange={(e) => {
+                      setFirstName(e.target.value);
+                      if (touched.firstName) setErrors((prev) => ({ ...prev, firstName: validateFirstName(e.target.value) }));
+                    }}
+                    onBlur={() => handleBlur("firstName")}
+                  />
+                  {touched.firstName && errors.firstName && (
+                    <p className="text-[11px] font-semibold text-red-500 mt-1">
+                      {errors.firstName}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <input
+                    type="text"
+                    value={lastName}
+                    className="w-full bg-gray-100/80 border border-gray-200 rounded-xl px-4 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none transition-all duration-200"
+                    placeholder="Last name"
+                    onChange={(e) => setLastName(e.target.value)}
+                  />
+                </div>
               </div>
 
-              <input
-                type="email"
-                value={email}
-                className="w-full bg-gray-100/80 border border-gray-200 rounded-xl px-4 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none transition-all duration-200 mb-3"
-                required
-                placeholder="Driver email"
-                onChange={(e) => setEmail(e.target.value)}
-              />
+              <div className="mb-3">
+                <input
+                  type="email"
+                  value={email}
+                  className={`w-full bg-gray-100/80 border rounded-xl px-4 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none transition-all duration-200 ${
+                    touched.email && errors.email
+                      ? "border-red-500 bg-red-50/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                      : "border-gray-200 focus:border-black focus:ring-2 focus:ring-black/10"
+                  }`}
+                  placeholder="Driver email"
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (touched.email) setErrors((prev) => ({ ...prev, email: validateEmail(e.target.value) }));
+                  }}
+                  onBlur={() => handleBlur("email")}
+                />
+                {touched.email && errors.email && (
+                  <p className="text-xs font-semibold text-red-500 mt-1 flex items-center gap-1">
+                    <i className="ri-error-warning-line"></i> {errors.email}
+                  </p>
+                )}
+              </div>
 
-              <input
-                type="password"
-                value={password}
-                className="w-full bg-gray-100/80 border border-gray-200 rounded-xl px-4 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none transition-all duration-200"
-                required
-                placeholder="Password (min 6 chars)"
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <div>
+                <input
+                  type="password"
+                  value={password}
+                  className={`w-full bg-gray-100/80 border rounded-xl px-4 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none transition-all duration-200 ${
+                    touched.password && errors.password
+                      ? "border-red-500 bg-red-50/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                      : "border-gray-200 focus:border-black focus:ring-2 focus:ring-black/10"
+                  }`}
+                  placeholder="Password (min 6 chars)"
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (touched.password) setErrors((prev) => ({ ...prev, password: validatePassword(e.target.value) }));
+                  }}
+                  onBlur={() => handleBlur("password")}
+                />
+                {touched.password && errors.password && (
+                  <p className="text-xs font-semibold text-red-500 mt-1 flex items-center gap-1">
+                    <i className="ri-error-warning-line"></i> {errors.password}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div>
@@ -125,45 +297,100 @@ const CaptainSignup = () => {
                 Vehicle Information
               </label>
               <div className="grid grid-cols-2 gap-3 mb-3">
-                <input
-                  type="text"
-                  value={vehicleColor}
-                  className="w-full bg-gray-100/80 border border-gray-200 rounded-xl px-4 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none transition-all duration-200"
-                  required
-                  placeholder="Vehicle color"
-                  onChange={(e) => setVehicleColor(e.target.value)}
-                />
-                <input
-                  type="text"
-                  value={vehiclePlate}
-                  className="w-full bg-gray-100/80 border border-gray-200 rounded-xl px-4 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none transition-all duration-200"
-                  required
-                  placeholder="Plate (GJ01AB1234)"
-                  onChange={(e) => setVehiclePlate(e.target.value)}
-                />
+                <div>
+                  <input
+                    type="text"
+                    value={vehicleColor}
+                    className={`w-full bg-gray-100/80 border rounded-xl px-4 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none transition-all duration-200 ${
+                      touched.vehicleColor && errors.vehicleColor
+                        ? "border-red-500 bg-red-50/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                        : "border-gray-200 focus:border-black focus:ring-2 focus:ring-black/10"
+                    }`}
+                    placeholder="Color (e.g. Black)"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setVehicleColor(val);
+                      if (touched.vehicleColor) setErrors((prev) => ({ ...prev, vehicleColor: validateVehicleColor(val) }));
+                    }}
+                    onBlur={() => handleBlur("vehicleColor")}
+                  />
+                  {touched.vehicleColor && errors.vehicleColor && (
+                    <p className="text-[11px] font-semibold text-red-500 mt-1">
+                      {errors.vehicleColor}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <input
+                    type="text"
+                    value={vehiclePlate}
+                    className={`w-full bg-gray-100/80 border rounded-xl px-4 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none transition-all duration-200 uppercase ${
+                      touched.vehiclePlate && errors.vehiclePlate
+                        ? "border-red-500 bg-red-50/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                        : "border-gray-200 focus:border-black focus:ring-2 focus:ring-black/10"
+                    }`}
+                    placeholder="Plate (GJ 05 AH 5358)"
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase();
+                      setVehiclePlate(val);
+                      if (touched.vehiclePlate) setErrors((prev) => ({ ...prev, vehiclePlate: validateVehiclePlate(val) }));
+                    }}
+                    onBlur={() => handleBlur("vehiclePlate")}
+                  />
+                  {touched.vehiclePlate && errors.vehiclePlate && (
+                    <p className="text-[11px] font-semibold text-red-500 mt-1">
+                      {errors.vehiclePlate}
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <input
-                  type="number"
-                  value={vehicleCapacity}
-                  className="w-full bg-gray-100/80 border border-gray-200 rounded-xl px-4 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none transition-all duration-200"
-                  required
-                  min="1"
-                  placeholder="Capacity (seats)"
-                  onChange={(e) => setVehicleCapacity(e.target.value)}
-                />
-                <select
-                  value={vehicleType}
-                  className="w-full bg-gray-100/80 border border-gray-200 rounded-xl px-4 py-2.5 text-base text-gray-900 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none transition-all duration-200 cursor-pointer"
-                  required
-                  onChange={(e) => setVehicleType(e.target.value)}
-                >
-                  <option value="">Vehicle type</option>
-                  <option value="car">Car (UberX / Sedan)</option>
-                  <option value="motorcycle">Motorcycle</option>
-                  <option value="auto">Auto Rikshaw</option>
-                </select>
+                <div>
+                  <select
+                    value={vehicleType}
+                    className={`w-full bg-gray-100/80 border rounded-xl px-4 py-2.5 text-base text-gray-900 focus:bg-white focus:outline-none transition-all duration-200 cursor-pointer ${
+                      touched.vehicleType && errors.vehicleType
+                        ? "border-red-500 bg-red-50/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                        : "border-gray-200 focus:border-black focus:ring-2 focus:ring-black/10"
+                    }`}
+                    onChange={handleVehicleTypeChange}
+                    onBlur={() => handleBlur("vehicleType")}
+                  >
+                    <option value="">Vehicle type</option>
+                    <option value="car">Car (UberX / Sedan)</option>
+                    <option value="motorcycle">Motorcycle</option>
+                    <option value="auto">Auto Rikshaw</option>
+                  </select>
+                  {touched.vehicleType && errors.vehicleType && (
+                    <p className="text-[11px] font-semibold text-red-500 mt-1">
+                      {errors.vehicleType}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <input
+                    type="number"
+                    value={vehicleCapacity}
+                    min="1"
+                    max="6"
+                    className={`w-full bg-gray-100/80 border rounded-xl px-4 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none transition-all duration-200 ${
+                      touched.vehicleCapacity && errors.vehicleCapacity
+                        ? "border-red-500 bg-red-50/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                        : "border-gray-200 focus:border-black focus:ring-2 focus:ring-black/10"
+                    }`}
+                    placeholder="Seats (max 6)"
+                    onChange={handleCapacityChange}
+                    onBlur={() => handleBlur("vehicleCapacity")}
+                  />
+                  {touched.vehicleCapacity && errors.vehicleCapacity && (
+                    <p className="text-[11px] font-semibold text-red-500 mt-1">
+                      {errors.vehicleCapacity}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 

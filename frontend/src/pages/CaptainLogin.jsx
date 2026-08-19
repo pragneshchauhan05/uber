@@ -1,5 +1,5 @@
 import React, { useState, useContext } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, Navigate } from "react-router-dom";
 import axios from "axios";
 import { CaptainDataContext } from "../Context/CaptainContext";
 
@@ -12,6 +12,10 @@ const CaptainLogin = () => {
 
   const navigate = useNavigate();
   const [, setCaptain] = useContext(CaptainDataContext);
+
+  if (localStorage.getItem("captainToken")) {
+    return <Navigate to="/captain-home" replace />;
+  }
 
   const submitHandler = async (e) => {
     e.preventDefault();

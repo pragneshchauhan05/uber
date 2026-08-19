@@ -173,17 +173,25 @@ const Home = () => {
         gsap.to(panelRef.current, {
           height: "70%",
           padding: 24,
+          duration: 0.4,
+          ease: "power3.inOut",
         });
         gsap.to(panelCloseRef.current, {
           opacity: 1,
+          duration: 0.3,
+          ease: "power2.out",
         });
       } else {
         gsap.to(panelRef.current, {
           height: "0%",
           padding: 0,
+          duration: 0.4,
+          ease: "power3.inOut",
         });
         gsap.to(panelCloseRef.current, {
           opacity: 0,
+          duration: 0.3,
+          ease: "power2.out",
         });
       }
     },
@@ -194,11 +202,15 @@ const Home = () => {
     function () {
       if (vehiclePanelOpen) {
         gsap.to(vehiclePanelRef.current, {
-          transform: "translateY(0)",
+          y: "0%",
+          duration: 0.4,
+          ease: "power3.inOut",
         });
       } else {
         gsap.to(vehiclePanelRef.current, {
-          transform: "translateY(100%)",
+          y: "100%",
+          duration: 0.4,
+          ease: "power3.inOut",
         });
       }
     },
@@ -209,11 +221,15 @@ const Home = () => {
     function () {
       if (confirmedRide) {
         gsap.to(confirmedRideRef.current, {
-          transform: "translateY(0)",
+          y: "0%",
+          duration: 0.4,
+          ease: "power3.inOut",
         });
       } else {
         gsap.to(confirmedRideRef.current, {
-          transform: "translateY(100%)",
+          y: "100%",
+          duration: 0.4,
+          ease: "power3.inOut",
         });
       }
     },
@@ -224,11 +240,15 @@ const Home = () => {
     function () {
       if (vehicleFound) {
         gsap.to(vehicleFoundRef.current, {
-          transform: "translateY(0)",
+          y: "0%",
+          duration: 0.4,
+          ease: "power3.inOut",
         });
       } else {
         gsap.to(vehicleFoundRef.current, {
-          transform: "translateY(100%)",
+          y: "100%",
+          duration: 0.4,
+          ease: "power3.inOut",
         });
       }
     },
@@ -239,11 +259,15 @@ const Home = () => {
     function () {
       if (waitingForDriver) {
         gsap.to(waitingForDriverRef.current, {
-          transform: "translateY(0)",
+          y: "0%",
+          duration: 0.4,
+          ease: "power3.inOut",
         });
       } else {
         gsap.to(waitingForDriverRef.current, {
-          transform: "translateY(100%)",
+          y: "100%",
+          duration: 0.4,
+          ease: "power3.inOut",
         });
       }
     },

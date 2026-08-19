@@ -1,5 +1,5 @@
 import React, { useState, useContext } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, Navigate } from "react-router-dom";
 import axios from "axios";
 import { CaptainDataContext } from "../Context/CaptainContext";
 import { getApiBaseUrl } from "../config";
@@ -17,6 +17,10 @@ const CaptainSignup = () => {
 
   const [, setCaptain] = useContext(CaptainDataContext);
   const navigate = useNavigate();
+
+  if (localStorage.getItem("captainToken")) {
+    return <Navigate to="/captain-home" replace />;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -21,11 +21,15 @@ const CaptainRiding = () => {
     function () {
       if (finishRidePanel) {
         gsap.to(finishRidePanelRef.current, {
-          transform: "translateY(0)",
+          y: "0%",
+          duration: 0.4,
+          ease: "power3.inOut",
         });
       } else {
         gsap.to(finishRidePanelRef.current, {
-          transform: "translateY(100%)",
+          y: "100%",
+          duration: 0.4,
+          ease: "power3.inOut",
         });
       }
     },

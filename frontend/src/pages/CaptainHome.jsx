@@ -71,11 +71,15 @@ const CaptainHome = () => {
     function () {
       if (ridePopUpPanel) {
         gsap.to(ridePopUpPanelRef.current, {
-          transform: "translateY(0)",
+          y: "0%",
+          duration: 0.4,
+          ease: "power3.inOut",
         });
       } else {
         gsap.to(ridePopUpPanelRef.current, {
-          transform: "translateY(100%)",
+          y: "100%",
+          duration: 0.4,
+          ease: "power3.inOut",
         });
       }
     },
@@ -86,11 +90,15 @@ const CaptainHome = () => {
     function () {
       if (confirmRidePopUpPanel) {
         gsap.to(confirmRidePopUpPanelRef.current, {
-          transform: "translateY(0)",
+          y: "0%",
+          duration: 0.4,
+          ease: "power3.inOut",
         });
       } else {
         gsap.to(confirmRidePopUpPanelRef.current, {
-          transform: "translateY(100%)",
+          y: "100%",
+          duration: 0.4,
+          ease: "power3.inOut",
         });
       }
     },

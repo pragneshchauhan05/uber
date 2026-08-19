@@ -1,7 +1,17 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 
 const Start = () => {
+  const userToken = localStorage.getItem("token");
+  const captainToken = localStorage.getItem("captainToken");
+
+  if (userToken) {
+    return <Navigate to="/home" replace />;
+  }
+
+  if (captainToken) {
+    return <Navigate to="/captain-home" replace />;
+  }
   return (
     <div className="min-h-screen bg-gray-900 flex justify-center items-center p-0 md:p-6">
       <div className="w-full max-w-md h-screen md:h-[840px] md:rounded-3xl shadow-2xl overflow-hidden relative flex flex-col justify-between bg-cover bg-center bg-[url('https://images.unsplash.com/photo-1527603815363-e79385e0747e?q=80&w=676&auto=format&fit=crop&ixlib=rb-4.1.0')]">
@@ -10,7 +20,11 @@ const Start = () => {
 
         {/* Top Header */}
         <div className="relative z-10 p-8 pt-10">
-          <img className="w-24 drop-shadow-md" src="/uber.png" alt="Uber" />
+          <img
+            className="w-24 drop-shadow-md"
+            src="/images  -removebg-preview.png"
+            alt="Uber"
+          />
         </div>
 
         {/* Bottom Card */}

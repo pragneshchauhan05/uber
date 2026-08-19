@@ -38,7 +38,13 @@ const CaptainProtectWrapper = ({ children }) => {
   }
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-white flex flex-col justify-center items-center p-6">
+        <img className="w-20 mb-6" src="/uber.png" alt="Uber" />
+        <div className="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-xs font-semibold text-gray-500 mt-4 tracking-wider uppercase">Authenticating Captain...</p>
+      </div>
+    );
   }
 
   return children;

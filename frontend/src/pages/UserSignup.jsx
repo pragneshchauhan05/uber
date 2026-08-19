@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, Navigate } from "react-router-dom";
 import { useState, useContext } from "react";
 import axios from "axios";
 import { UserDataContext } from "../Context/UserContext";
@@ -13,6 +13,10 @@ const UserSignup = () => {
 
   const [, setUser] = useContext(UserDataContext);
   const navigate = useNavigate();
+
+  if (localStorage.getItem("token")) {
+    return <Navigate to="/home" replace />;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();

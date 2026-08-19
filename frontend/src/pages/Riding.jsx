@@ -55,12 +55,22 @@ function Riding() {
             <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>
             Trip in Progress
           </div>
-          <Link
-            to="/home"
-            className="h-10 w-10 bg-white/90 backdrop-blur-md shadow-lg flex items-center justify-center rounded-full text-gray-800 hover:bg-white transition-all pointer-events-auto"
-          >
-            <i className="ri-home-5-line text-lg"></i>
-          </Link>
+          <div className="flex items-center gap-2 pointer-events-auto">
+            <Link
+              to="/home"
+              title="Home"
+              className="h-10 w-10 bg-white/90 backdrop-blur-md shadow-lg flex items-center justify-center rounded-full text-gray-800 hover:bg-black hover:text-white transition-all cursor-pointer"
+            >
+              <i className="ri-home-5-line text-lg"></i>
+            </Link>
+            <Link
+              to="/logout"
+              title="Logout"
+              className="h-10 w-10 bg-white/90 backdrop-blur-md shadow-lg flex items-center justify-center rounded-full text-gray-800 hover:bg-black hover:text-white transition-all cursor-pointer"
+            >
+              <i className="ri-logout-box-r-line text-lg"></i>
+            </Link>
+          </div>
         </div>
 
         {/* Live Map Portion */}

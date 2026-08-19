@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useContext } from "react";
+import { Link } from "react-router-dom";
 import CaptainDetails from "../componets/CaptainDetails";
 import RidePopUp from "../componets/RidePopUp";
 import ConfirmRidePop from "../componets/ConfirmRidePop";
@@ -115,9 +116,18 @@ const CaptainHome = () => {
             src="/uber.png"
             alt="Uber"
           />
-          <div className="bg-emerald-600 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-lg pointer-events-auto flex items-center gap-1.5">
-            <span className="w-2 h-2 bg-white rounded-full animate-ping"></span>
-            Online & Ready
+          <div className="flex items-center gap-2.5 pointer-events-auto">
+            <div className="bg-emerald-600 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
+              <span className="w-2 h-2 bg-white rounded-full animate-ping"></span>
+              Online & Ready
+            </div>
+            <Link
+              to="/captain-logout"
+              title="Logout"
+              className="h-9 w-9 bg-white/90 backdrop-blur-md shadow-lg flex items-center justify-center rounded-full text-gray-800 hover:bg-black hover:text-white transition-all cursor-pointer"
+            >
+              <i className="ri-logout-box-r-line text-base"></i>
+            </Link>
           </div>
         </div>
 

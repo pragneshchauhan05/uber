@@ -12,7 +12,7 @@ import LiveTraking from "../componets/LiveTraking";
 import { useEffect, useContext } from "react";
 import { SocketContext } from "../Context/SocketContext";
 import { UserDataContext } from "../Context/UserContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { getApiBaseUrl } from "../config";
 
 const Home = () => {
@@ -308,7 +308,7 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gray-900 flex justify-center items-center p-0 md:p-6">
       <div className="w-full max-w-md h-screen md:h-[840px] md:rounded-3xl shadow-2xl overflow-hidden relative bg-white">
-        {/* Top Header Logo */}
+        {/* Top Header Logo & Logout */}
         <div className="absolute top-5 left-5 right-5 z-20 flex items-center justify-between pointer-events-none">
           <img
             className={`w-16 transition-opacity duration-300 drop-shadow-md pointer-events-auto ${
@@ -317,6 +317,13 @@ const Home = () => {
             src="/uber.png"
             alt="Uber logo"
           />
+          <Link
+            to="/logout"
+            title="Logout"
+            className="h-10 w-10 bg-white/90 backdrop-blur-md shadow-lg flex items-center justify-center rounded-full text-gray-800 hover:bg-black hover:text-white transition-all pointer-events-auto cursor-pointer"
+          >
+            <i className="ri-logout-box-r-line text-lg"></i>
+          </Link>
         </div>
 
         {/* Live Map Background */}

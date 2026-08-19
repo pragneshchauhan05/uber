@@ -8,27 +8,34 @@ const UserLogout = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const cleanup = () => {
+      localStorage.removeItem("token");
+      sessionStorage.clear();
+      navigate("/login", { replace: true });
+    };
+
     axios
       .get(`${getApiBaseUrl()}/users/logout`, {
-
         headers: {
           Authorization: `Bearer ${token}`,
         },
       })
-      .then((res) => {
-        console.log(res.data);
-        localStorage.removeItem("token");
-        navigate("/login");
+      .then(() => {
+        cleanup();
       })
       .catch((err) => {
-        console.error(err);
-
-        localStorage.removeItem("token");
-        navigate("/login");
+        console.error("Logout error:", err);
+        cleanup();
       });
-  }, []);
+  }, [token, navigate]);
 
-  return <div>Logging out...</div>;
+  return (
+    <div className="min-h-screen bg-white flex flex-col justify-center items-center p-6">
+      <img className="w-20 mb-6" src="/uber.png" alt="Uber" />
+      <div className="w-8 h-8 border-3 border-black border-t-transparent rounded-full animate-spin"></div>
+      <p className="text-xs font-semibold text-gray-500 mt-4 tracking-wider uppercase">Logging out...</p>
+    </div>
+  );
 };
 
 export default UserLogout;

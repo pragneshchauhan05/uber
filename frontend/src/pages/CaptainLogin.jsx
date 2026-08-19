@@ -9,6 +9,7 @@ const CaptainLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const navigate = useNavigate();
   const [, setCaptain] = useContext(CaptainDataContext);
@@ -16,6 +17,7 @@ const CaptainLogin = () => {
   const submitHandler = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMessage("");
 
     try {
       const baseUrl = getApiBaseUrl();
@@ -33,13 +35,13 @@ const CaptainLogin = () => {
     } catch (err) {
       console.error("Captain login error:", err);
       const resData = err.response?.data;
-      const message =
-        resData?.message ||
-        resData?.errors?.[0]?.msg ||
-        "Login failed. Please check your credentials and connection.";
-      alert(message);
+      if (!err.response) {
+        setErrorMessage("Server connection failed. If backend is on Render free tier, please wait 30s for server cold start and try again.");
+      } else {
+        const msg = resData?.message || resData?.errors?.[0]?.msg || "Invalid login credentials. Please check your details or register as captain.";
+        setErrorMessage(msg);
+      }
     } finally {
-
       setIsLoading(false);
     }
   };
@@ -55,6 +57,13 @@ const CaptainLogin = () => {
               <i className="ri-steering-2-fill text-sm"></i> Driver Portal
             </span>
           </div>
+
+          {errorMessage && (
+            <div className="mb-4 p-3.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl flex items-start gap-2.5 shadow-sm animate-fade-in">
+              <i className="ri-error-warning-line text-lg text-red-500 shrink-0 mt-0.5"></i>
+              <span>{errorMessage}</span>
+            </div>
+          )}
 
           <form onSubmit={submitHandler} className="space-y-5">
             <div>

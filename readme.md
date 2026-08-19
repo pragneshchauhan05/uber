@@ -1,588 +1,282 @@
-# Uber Clone Backend Documentation
+# 🚕 Uber Clone — Full-Stack Web Application & PWA
 
-This document provides complete documentation for the API endpoints available in the Uber Clone Backend.
-
----
-
-## 📌 User Authentication Endpoints
-
-### 1. Register User
-
-Register a new user in the system, hash the password, save user details to MongoDB, and return a JWT authentication token.
-
-- **Endpoint:** `/users/register`
-- **HTTP Method:** `POST`
-- **Content-Type:** `application/json`
+A feature-rich, high-performance, real-time **Uber Clone** application built with the **MERN** stack (MongoDB, Express.js, React.js, Node.js), Socket.io, TailwindCSS, GSAP, and Google Maps API with OpenStreetMap / Leaflet fallbacks.
 
 ---
 
-#### 📥 Request Headers
+## 🌟 Key Features Overview
 
-| Header         | Type   | Value              | Required |
-| :------------- | :----- | :----------------- | :------- |
-| `Content-Type` | String | `application/json` | Yes      |
-
----
-
-#### 📝 Request Body Requirements
-
-The request body must be sent as a JSON object with the following fields:
-
-| Field                | Type   | Required | Constraints / Description                      |
-| :------------------- | :----- | :------- | :--------------------------------------------- |
-| `fullname.firstname` | String | **Yes**  | Minimum 3 characters long.                     |
-| `fullname.lastname`  | String | No       | Minimum 3 characters long (optional).          |
-| `email`              | String | **Yes**  | Must be a valid email address. Must be unique. |
-| `password`           | String | **Yes**  | Minimum 6 characters long.                     |
-
-##### Example Request Body:
-
-```json
-{
-  "fullname": {
-    "firstname": "John",
-    "lastname": "Doe"
-  },
-  "email": "john.doe@example.com",
-  "password": "password123"
-}
-```
+### 👤 User & Captain Authentication
+- **Dual Portal Authentication**: Separate registration and login workflows for Riders (Users) and Captains (Drivers).
+- **Session & Cookie Persistence**: HTTP-only JWT cookies combined with `sessionStorage` route persistence (`lastPath`) so users stay logged in across page refreshes.
+- **Real-Time Input Validation**:
+  - **Email Format**: Regex validation for valid email address formatting (`name@example.com`).
+  - **Password**: Enforces minimum 6 characters.
+  - **First Name**: Minimum 3 characters requirement.
+  - **Vehicle Color**: Letters-only validation (e.g. `Black`, `White`).
+  - **License Plate**: Strict Indian vehicle registration format (`GJ 05 AH 5358`).
+  - **Vehicle Seats**: Maximum capacity limit of 6 passengers with auto-preset capacity per vehicle type (Motorcycle: 1, Auto: 3, Car: 4).
+- **Inline Error Feedback**: Red input highlight borders, inline validation notes, and styled server error banners.
 
 ---
 
-#### 📤 Response & Status Codes
-
-#### 1️⃣ `201 Created` — Registration Successful
-
-Returned when the user is successfully created in the database and a JWT authentication token is generated.
-
-##### Example Response:
-
-```json
-{
-  "user": {
-    "_id": "66b1a2345c67890123456789",
-    "fullname": {
-      "firstname": "John",
-      "lastname": "Doe"
-    },
-    "email": "john.doe@example.com",
-    "socketId": null
-  },
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NmIxYTIzNDVjNjc4OTAxMjM0NTY3ODkiLCJpYXQiOjE3MjI5NDU0MDB9.signature"
-}
-```
+### 🗺️ Live Mapping & Fast Location Services
+- **Dual Map Engine**:
+  - Primary: Google Maps 2D JavaScript API.
+  - Fallback: Auto-switches to **OpenStreetMap + Leaflet.js** if Google Maps quota/API key limits are reached.
+- **Ultra-Fast Parallel Fare & Distance Engine**:
+  - Uses `Promise.all` parallel geocoding and 1000ms timeouts for sub-200ms fare responses.
+  - In-memory LRU caching (`distanceCache` & `geocodeCache`) for repeat searches.
+- **Indian Rupee Formatting**:
+  - All ride fares and driver earnings formatted using Indian locale numbers (e.g. **`₹2,000`**).
 
 ---
 
-#### 2️⃣ `400 Bad Request` — Validation Failed or User Already Exists
-
-Returned if input validation fails (e.g. invalid email format, short firstname/password) or if an account with the specified email address already exists.
-
-##### Example Response (Validation Errors):
-
-```json
-{
-  "errors": [
-    {
-      "type": "field",
-      "value": "jo",
-      "msg": "First name must be at least 3 characters long",
-      "path": "fullname.firstname",
-      "location": "body"
-    },
-    {
-      "type": "field",
-      "value": "invalid-email",
-      "msg": "Invalid email address",
-      "path": "email",
-      "location": "body"
-    },
-    {
-      "type": "field",
-      "value": "123",
-      "msg": "Password must be at least 6 characters long",
-      "path": "password",
-      "location": "body"
-    }
-  ]
-}
-```
-
-##### Example Response (User Already Exists):
-
-```json
-{
-  "message": "User already exists with this email"
-}
-```
+### ⚡ Real-Time Socket.io Integration
+- **Live Location Tracking**: Captains stream current GPS coordinates (`update-location-captain`) to backend every 10s.
+- **Trip Lifecycle Events**:
+  - `ride_request`: Nearby captains receive instant ride popup cards.
+  - `ride-confirmed`: User gets matched with driver details & OTP.
+  - `ride-started`: OTP verification triggers live trip screen (`/riding`).
+  - `ride-ended`: Forward user back to clean `/home` screen, closing all panels.
+  - `ride-cancelled`: Resets state and closes all panels across rider & captain interfaces.
 
 ---
 
-#### 3️⃣ `500 Internal Server Error` — Server / Database Error
-
-Returned when an unexpected error occurs on the server or database connection fails.
-
-##### Example Response:
-
-```json
-{
-  "message": "Error connecting to database"
-}
-```
+### 💰 Dynamic Captain Earnings Management
+- **Automated Earnings Accumulation**: When a captain completes a trip (`POST /rides/end-ride`), the trip fare is atomically calculated and saved to MongoDB.
+- **Dynamic Database Aggregation**: Captain homepage dynamically queries completed rides (`status: "completed"`) and updates the **"Earned Today"** header in real-time.
 
 ---
 
-### 2. Login User
-
-Authenticate an existing user using email and password. Returns a JWT authentication token on success.
-
-- **Endpoint:** `/users/login`
-- **HTTP Method:** `POST`
-- **Content-Type:** `application/json`
-
----
-
-#### 📥 Request Headers
-
-| Header         | Type   | Value              | Required |
-| :------------- | :----- | :----------------- | :------- |
-| `Content-Type` | String | `application/json` | Yes      |
+### 🛣️ Phase 1: Captain Planned Route Creation (Carpooling)
+- **Route Publishing**: Captains can create and publish scheduled planned routes.
+- **Location Autocomplete**: Select Start Location and Destination using live Google Places / Nominatim search.
+- **Schedule & Seats**: Select Departure Date, Departure Time, and Available Seats (1-6).
+- **Map Polyline Preview**: Renders Start & Destination markers connected with a dashed Polyline route line.
+- **Route Manager**: View and delete published active routes (`GET /api/routes/my-routes` and `DELETE /api/routes/:id`).
 
 ---
 
-#### 📝 Request Body Requirements
+## 🏗️ Technology Stack
 
-The request body must be sent as a JSON object with the following fields:
+### **Frontend**
+- **Framework**: React.js (Vite)
+- **Styling**: Vanilla CSS, TailwindCSS
+- **Animations**: GSAP (GPU transformed `y: "0%"`, `y: "100%"`)
+- **Maps**: `@react-google-maps/api`, `Leaflet.js` & OpenStreetMap
+- **Icons**: RemixIcon
+- **PWA**: `vite-plugin-pwa` with custom mobile/desktop install prompt
 
-| Field      | Type   | Required | Constraints / Description      |
-| :--------- | :----- | :------- | :----------------------------- |
-| `email`    | String | **Yes**  | Must be a valid email address. |
-| `password` | String | **Yes**  | Minimum 6 characters long.     |
+### **Backend**
+- **Runtime**: Node.js & Express.js
+- **Database**: MongoDB with Mongoose Schema validation
+- **Real-time Protocol**: Socket.io
+- **Security**: `bcryptjs` password hashing, `jsonwebtoken` (JWT), `cookie-parser`, `express-validator`
 
-##### Example Request Body:
+---
 
-```json
-{
-  "email": "john.doe@example.com",
-  "password": "password123"
-}
+## 📂 Project Architecture
+
+```text
+Uber Clone/
+├── backend/
+│   ├── config/
+│   ├── controllers/
+│   │   ├── captain.controller.js
+│   │   ├── captainRoute.controller.js
+│   │   ├── ride.controller.js
+│   │   └── user.controller.js
+│   ├── db/
+│   │   └── db.js
+│   ├── middlewares/
+│   │   └── auth.middleware.js
+│   ├── models/
+│   │   ├── blackListToken.js
+│   │   ├── captain.model.js
+│   │   ├── captainRoute.model.js
+│   │   ├── ride.model.js
+│   │   └── user.model.js
+│   ├── routes/
+│   │   ├── captain.routes.js
+│   │   ├── captainRoute.routes.js
+│   │   ├── maps.routes.js
+│   │   ├── ride.routes.js
+│   │   └── user.routes.js
+│   ├── services/
+│   │   ├── captain.service.js
+│   │   ├── maps.service.js
+│   │   ├── ride.service.js
+│   │   └── user.service.js
+│   ├── app.js
+│   ├── server.js
+│   └── socket.js
+└── frontend/
+    ├── public/
+    │   ├── pwa-192x192.png
+    │   ├── pwa-512x512.png
+    │   └── uber.png
+    ├── src/
+    │   ├── componets/
+    │   │   ├── CaptainDetails.jsx
+    │   │   ├── ConfirmedRide.jsx
+    │   │   ├── ConfirmRidePop.jsx
+    │   │   ├── FinishRide.jsx
+    │   │   ├── LiveTraking.jsx
+    │   │   ├── LocationSearchPanel.jsx
+    │   │   ├── LookingForDriver.jsx
+    │   │   ├── PWAInstallPrompt.jsx
+    │   │   ├── RidePopUp.jsx
+    │   │   ├── VehiclePanel.jsx
+    │   │   └── WaitingForDriver.jsx
+    │   ├── Context/
+    │   │   ├── CaptainContext.jsx
+    │   │   ├── SocketContext.jsx
+    │   │   └── UserContext.jsx
+    │   ├── pages/
+    │   │   ├── CaptainHome.jsx
+    │   │   ├── CaptainLogin.jsx
+    │   │   ├── CaptainLogout.jsx
+    │   │   ├── CaptainProtectWrapper.jsx
+    │   │   ├── CaptainRiding.jsx
+    │   │   ├── CaptainSignup.jsx
+    │   │   ├── CreateRoute.jsx
+    │   │   ├── Home.jsx
+    │   │   ├── Riding.jsx
+    │   │   ├── Start.jsx
+    │   │   ├── UserLogin.jsx
+    │   │   ├── UserLogout.jsx
+    │   │   └── UserSignup.jsx
+    │   ├── App.jsx
+    │   ├── config.js
+    │   └── main.jsx
+    └── vite.config.js
 ```
 
 ---
 
-#### 📤 Response & Status Codes
+## 📡 Complete API Reference
 
-#### 1️⃣ `200 OK` — Login Successful
+### 👤 User Endpoints (`/users`)
 
-Returned when credentials are valid and a JWT token is generated.
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/users/register` | Register a new user | No |
+| `POST` | `/users/login` | Authenticate user & issue token/cookie | No |
+| `GET` | `/users/profile` | Get current user profile | Yes (User Token) |
+| `GET` | `/users/logout` | Revoke token and clear session | Yes (User Token) |
 
-##### Example Response:
+---
 
-```json
-{
-  "user": {
-    "_id": "66b1a2345c67890123456789",
-    "fullname": {
-      "firstname": "John",
-      "lastname": "Doe"
-    },
-    "email": "john.doe@example.com",
-    "socketId": null
-  },
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NmIxYTIzNDVjNjc4OTAxMjM0NTY3ODkiLCJpYXQiOjE3MjI5NDU0MDB9.signature"
-}
-```
+### 👨‍✈️ Captain Endpoints (`/captains`)
 
-#### 2️⃣ `400 Bad Request` — Validation Failed
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/captains/register` | Register new captain with vehicle details | No |
+| `POST` | `/captains/login` | Authenticate captain & issue token/cookie | No |
+| `GET` | `/captains/profile` | Get captain profile & dynamic today earnings | Yes (Captain Token) |
+| `POST` | `/captains/logout` | Revoke captain token | Yes (Captain Token) |
 
-Returned if email or password is missing or invalid.
+---
 
-##### Example Response:
+### 🚖 Ride Endpoints (`/rides`)
 
-```json
-{
-  "errors": [
-    {
-      "msg": "Invalid email address",
-      "param": "email",
-      "location": "body"
-    },
-    {
-      "msg": "Password must be at least 6 characters long",
-      "param": "password",
-      "location": "body"
-    }
-  ]
-}
-```
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/rides/create` | Create a new ride request | Yes (User Token) |
+| `GET` | `/rides/get-fare` | Calculate instant fare for pickup & destination | Yes (User Token) |
+| `POST` | `/rides/confirm` | Captain accepts a ride request | Yes (Captain Token) |
+| `GET` | `/rides/start-ride` | Start ride with OTP verification | Yes (Captain Token) |
+| `POST` | `/rides/end-ride` | Complete ride & update captain earnings | Yes (Captain Token) |
+| `POST` | `/rides/cancel-ride` | Cancel ongoing or pending ride | Yes |
 
-#### 3️⃣ `401 Unauthorized` — Invalid Credentials
+---
 
-Returned when the email does not exist or the password is incorrect.
+### 🗺️ Maps Endpoints (`/maps`)
 
-##### Example Response:
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/maps/get-coordinates` | Get `{ lat, lng }` for an address string | Yes |
+| `GET` | `/maps/get-distance-time` | Get distance and travel duration between locations | Yes |
+| `GET` | `/maps/get-suggestion` | Autocomplete location search suggestions | Yes |
 
-```json
-{
-  "message": "Invalid credentials"
-}
-```
+---
 
-#### 4️⃣ `500 Internal Server Error` — Server / Database Error
+### 🛣️ Captain Route Endpoints (`/api/routes` or `/routes`)
 
-Returned when an unexpected server error occurs while processing the login.
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/routes` | Create and publish a planned captain route | Yes (Captain Token) |
+| `GET` | `/api/routes/my-routes` | Fetch all active planned routes by logged-in captain | Yes (Captain Token) |
+| `DELETE` | `/api/routes/:id` | Delete/Cancel a published planned route | Yes (Captain Token) |
 
-##### Example Response:
+---
 
-```json
-{
-  "message": "Internal server error"
-}
+## 💻 Installation & Setup Guide
+
+### Prerequisites
+- Node.js (`v18+`)
+- MongoDB (Local instance or MongoDB Atlas cluster)
+- Google Maps API Key (with Maps JavaScript API & Geocoding enabled)
+
+### 1. Clone & Install Dependencies
+
+```bash
+# Clone repository
+git clone https://github.com/pragneshchauhan05/uber.git
+cd "Uber Clone"
+
+# Install backend dependencies
+cd backend
+npm install
+
+# Install frontend dependencies
+cd ../frontend
+npm install
 ```
 
 ---
 
-### 3. Get User Profile
+### 2. Configure Environment Variables
 
-Fetch the authenticated user's profile details.
-
-- **Endpoint:** `/users/profile`
-- **HTTP Method:** `GET`
-- **Authentication:** Required
-
-#### 📥 Request Headers
-
-| Header          | Type   | Value            | Required |
-| :-------------- | :----- | :--------------- | :------- |
-| `Authorization` | String | `Bearer <token>` | Yes      |
-
-> The token can also be sent in a cookie named `token`.
-
-#### 📤 Response & Status Codes
-
-#### 1️⃣ `200 OK` — Profile Retrieved Successfully
-
-##### Example Response:
-
-```json
-{
-  "user": {
-    "_id": "66b1a2345c67890123456789",
-    "fullname": {
-      "firstname": "John",
-      "lastname": "Doe"
-    },
-    "email": "john.doe@example.com",
-    "socketId": null
-  }
-}
+Create `.env` in `backend/`:
+```env
+PORT=4000
+DB_CONNECT=mongodb://localhost:27017/uber
+JWT_SECRET=your_jwt_secret_key_here
+GOOGLE_MAPS_API=your_google_maps_api_key_here
 ```
 
-#### 2️⃣ `401 Unauthorized` — Invalid or Missing Token
-
-##### Example Response:
-
-```json
-{
-  "message": "No token provided"
-}
-```
-
-#### 3️⃣ `404 Not Found` — User Not Found
-
-##### Example Response:
-
-```json
-{
-  "message": "User not found"
-}
+Create `.env` in `frontend/`:
+```env
+VITE_BASE_URL=http://localhost:4000
+VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
 ```
 
 ---
 
-### 4. Logout User
+### 3. Run Locally
 
-Invalidate the current JWT token so it can no longer be used.
+```bash
+# Start Backend server (from backend directory)
+cd backend
+npm run dev
 
-- **Endpoint:** `/users/logout`
-- **HTTP Method:** `POST`
-- **Authentication:** Recommended via current JWT token
-
-#### 📥 Request Headers
-
-| Header          | Type   | Value            | Required |
-| :-------------- | :----- | :--------------- | :------- |
-| `Authorization` | String | `Bearer <token>` | Yes      |
-
-> The token can also be sent in a cookie named `token`.
-
-#### 📤 Response & Status Codes
-
-#### 1️⃣ `200 OK` — Logout Successful
-
-##### Example Response:
-
-```json
-{
-  "message": "Logged out successfully"
-}
+# Start Frontend Vite server (from frontend directory)
+cd frontend
+npm run dev
 ```
 
-#### 2️⃣ `401 Unauthorized` — Invalid or Missing Token
-
-##### Example Response:
-
-```json
-{
-  "message": "Invalid token"
-}
-```
+Open `http://localhost:5173` in your browser.
 
 ---
 
-## 🚖 Captain Endpoints
-
-### 1. Register Captain
-
-Register a new captain with vehicle details and return a JWT token.
-
-- **Endpoint:** `/captains/register`
-- **HTTP Method:** `POST`
-- **Content-Type:** `application/json`
-
-#### 📥 Request Headers
-
-| Header         | Type   | Value              | Required |
-| :------------- | :----- | :----------------- | :------- |
-| `Content-Type` | String | `application/json` | Yes      |
-
-#### 📝 Request Body Requirements
-
-| Field                 | Type   | Required | Constraints / Description            |
-| :-------------------- | :----- | :------- | :----------------------------------- |
-| `fullname.firstname`  | String | **Yes**  | Minimum 3 characters long            |
-| `fullname.lastname`   | String | No       | Minimum 3 characters long            |
-| `email`               | String | **Yes**  | Must be a valid email address        |
-| `password`            | String | **Yes**  | Minimum 6 characters long            |
-| `vehicle.color`       | String | **Yes**  | Minimum 3 characters long            |
-| `vehicle.plate`       | String | **Yes**  | Minimum 6 characters long            |
-| `vehicle.capacity`    | Number | **Yes**  | Minimum 1                            |
-| `vehicle.vehicleType` | String | **Yes**  | Must be one of `car`, `bike`, `auto` |
-
-##### Example Request Body:
-
-```json
-{
-  "fullname": {
-    "firstname": "John",
-    "lastname": "Doe"
-  },
-  "email": "captain@example.com",
-  "password": "password123",
-  "vehicle": {
-    "color": "Black",
-    "plate": "ABC123",
-    "capacity": 4,
-    "vehicleType": "car"
-  }
-}
-```
-
-#### 📤 Response & Status Codes
-
-#### 1️⃣ `201 Created` — Captain Registered Successfully
-
-##### Example Response:
-
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2YTU0MTIzNDU2Nzg5MDEyMzQ1NiJ9.signature",
-  "captain": {
-    "_id": "66b1a2345c67890123456789",
-    "fullname": {
-      "firstname": "John",
-      "lastname": "Doe"
-    },
-    "email": "captain@example.com",
-    "status": "inactive",
-    "vehicle": {
-      "color": "Black",
-      "plate": "ABC123",
-      "capacity": 4,
-      "vehicleType": "car"
-    }
-  }
-}
-```
-
-#### 2️⃣ `400 Bad Request` — Validation Failed or Captain Already Exists
-
-##### Example Response:
-
-```json
-{
-  "message": "Captain already exists"
-}
-```
-
-#### 3️⃣ `500 Internal Server Error` — Server Error
-
-##### Example Response:
-
-```json
-{
-  "message": "Internal server error"
-}
-```
-
----
-
-### 2. Login Captain
-
-Authenticate an existing captain using email and password. Returns a JWT authentication token on success.
-
-- **Endpoint:** `/captains/login`
-- **HTTP Method:** `POST`
-- **Content-Type:** `application/json`
-
-#### 📥 Request Headers
-
-| Header         | Type   | Value              | Required |
-| :------------- | :----- | :----------------- | :------- |
-| `Content-Type` | String | `application/json` | Yes      |
-
-#### 📝 Request Body Requirements
-
-| Field      | Type   | Required | Constraints / Description      |
-| :--------- | :----- | :------- | :----------------------------- |
-| `email`    | String | **Yes**  | Must be a valid email address. |
-| `password` | String | **Yes**  | Minimum 6 characters long.     |
-
-##### Example Request Body:
-
-```json
-{
-  "email": "captain@example.com",
-  "password": "password123"
-}
-```
-
-#### 📤 Response & Status Codes
-
-#### 1️⃣ `200 OK` — Login Successful
-
-##### Example Response:
-
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2YTU0MTIzNDU2Nzg5MDEyMzQ1NiJ9.signature",
-  "captain": {
-    "_id": "66b1a2345c67890123456789",
-    "fullname": {
-      "firstname": "John",
-      "lastname": "Doe"
-    },
-    "email": "captain@example.com",
-    "status": "inactive"
-  }
-}
-```
-
-#### 2️⃣ `400 Bad Request` — Invalid Credentials
-
-##### Example Response:
-
-```json
-{
-  "message": "Invalid credentials"
-}
-```
-
----
-
-### 3. Get Captain Profile
-
-Fetch the authenticated captain's profile details.
-
-- **Endpoint:** `/captains/profile`
-- **HTTP Method:** `GET`
-- **Authentication:** Required
-
-#### 📥 Request Headers
-
-| Header          | Type   | Value            | Required |
-| :-------------- | :----- | :--------------- | :------- |
-| `Authorization` | String | `Bearer <token>` | Yes      |
-
-> The token can also be sent in a cookie named `token`.
-
-#### 📤 Response & Status Codes
-
-#### 1️⃣ `200 OK` — Profile Retrieved Successfully
-
-##### Example Response:
-
-```json
-{
-  "captain": {
-    "_id": "66b1a2345c67890123456789",
-    "fullname": {
-      "firstname": "John",
-      "lastname": "Doe"
-    },
-    "email": "captain@example.com",
-    "status": "inactive"
-  }
-}
-```
-
-#### 2️⃣ `401 Unauthorized` — Invalid or Missing Token
-
-##### Example Response:
-
-```json
-{
-  "message": "No token provided"
-}
-```
-
----
-
-### 4. Logout Captain
-
-Invalidate the current captain JWT token so it can no longer be used.
-
-- **Endpoint:** `/captains/logout`
-- **HTTP Method:** `GET`
-- **Authentication:** Required
-
-#### 📥 Request Headers
-
-| Header          | Type   | Value            | Required |
-| :-------------- | :----- | :--------------- | :------- |
-| `Authorization` | String | `Bearer <token>` | Yes      |
-
-> The token can also be sent in a cookie named `token`.
-
-#### 📤 Response & Status Codes
-
-#### 1️⃣ `200 OK` — Logout Successful
-
-##### Example Response:
-
-```json
-{
-  "message": "Logout successful"
-}
-```
-
-#### 2️⃣ `401 Unauthorized` — Invalid or Missing Token
-
-##### Example Response:
-
-```json
-{
-  "message": "Invalid token"
-}
-```
+## 🧪 Testing Phase 1: Captain Route Creation
+
+1. Login as a Captain at `/captain-login`.
+2. Click **"Create Route"** in the top header (or go to `/captain/create-route`).
+3. Enter Start Location (e.g., `Ahmedabad`) and Destination (e.g., `Gandhinagar`).
+4. Select Date (e.g., `2026-08-20`), Departure Time (e.g., `09:00 AM`), and Available Seats (e.g., `3`).
+5. Observe the map preview with Polyline route line and preview summary card.
+6. Click **"Publish Route"**.
+7. Confirm that the route appears under **"My Published Planned Routes"** and test deletion.

@@ -36,7 +36,27 @@ const CaptainHome = () => {
         })
         .catch((err) => console.error("Error fetching captain profile:", err));
     }
-  }, []);
+  }, [setCaptain]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (confirmRidePopUpPanel) {
+        setConfirmRidePopUpPanel(false);
+        setRidePopUpPanel(true);
+        window.history.pushState(null, "", window.location.href);
+      } else if (ridePopUpPanel) {
+        setRidePopUpPanel(false);
+        window.history.pushState(null, "", window.location.href);
+      }
+    };
+
+    window.history.pushState(null, "", window.location.href);
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [ridePopUpPanel, confirmRidePopUpPanel]);
 
   useEffect(() => {
     if (captain && captain._id) {
@@ -134,10 +154,18 @@ const CaptainHome = () => {
             src="/uber.png"
             alt="Uber"
           />
-          <div className="flex items-center gap-2.5 pointer-events-auto">
-            <div className="bg-emerald-600 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
+          <div className="flex items-center gap-2 pointer-events-auto">
+            <Link
+              to="/captain/create-route"
+              title="Publish Planned Route"
+              className="h-9 px-3 bg-black text-white backdrop-blur-md shadow-lg flex items-center justify-center rounded-full text-xs font-bold hover:bg-gray-800 transition-all cursor-pointer gap-1"
+            >
+              <i className="ri-map-pin-add-line text-sm"></i>
+              <span>Create Route</span>
+            </Link>
+            <div className="bg-emerald-600 text-white text-xs font-bold px-2.5 py-1.5 rounded-full shadow-lg flex items-center gap-1">
               <span className="w-2 h-2 bg-white rounded-full animate-ping"></span>
-              Online & Ready
+              Online
             </div>
             <Link
               to="/captain-logout"

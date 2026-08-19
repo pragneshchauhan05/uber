@@ -85,6 +85,38 @@ const Home = () => {
   }, [location.state]);
 
   useEffect(() => {
+    const handlePopState = () => {
+      if (waitingForDriver) {
+        setWaitingForDriver(false);
+        setVehicleFound(true);
+        window.history.pushState(null, "", window.location.href);
+      } else if (vehicleFound) {
+        setVehicleFound(false);
+        setConfirmedRide(true);
+        window.history.pushState(null, "", window.location.href);
+      } else if (confirmedRide) {
+        setConfirmedRide(false);
+        setVehiclePanelOpen(true);
+        window.history.pushState(null, "", window.location.href);
+      } else if (vehiclePanelOpen) {
+        setVehiclePanelOpen(false);
+        setPanelOpen(true);
+        window.history.pushState(null, "", window.location.href);
+      } else if (panelOpen) {
+        setPanelOpen(false);
+        window.history.pushState(null, "", window.location.href);
+      }
+    };
+
+    window.history.pushState(null, "", window.location.href);
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [panelOpen, vehiclePanelOpen, confirmedRide, vehicleFound, waitingForDriver]);
+
+  useEffect(() => {
     if (pickup || destination || vehiclePanelOpen || confirmedRide || vehicleFound || waitingForDriver) {
       sessionStorage.setItem("home_pickup", pickup);
       sessionStorage.setItem("home_destination", destination);

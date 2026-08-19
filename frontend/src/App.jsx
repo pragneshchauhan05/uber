@@ -13,6 +13,7 @@ import CaptainProtectWrapper from "./pages/CaptainProtectWrapper";
 import CaptainLogout from "./pages/CaptainLogout";
 import Riding from "./pages/Riding";
 import CaptainRiding from "./pages/CaptainRiding";
+import CreateRoute from "./pages/CreateRoute";
 import PWAInstallPrompt from "./componets/PWAInstallPrompt";
 
 const App = () => {
@@ -68,6 +69,14 @@ const App = () => {
           element={
             <CaptainProtectWrapper>
               <CaptainHome />
+            </CaptainProtectWrapper>
+          }
+        />
+        <Route
+          path="/captain/create-route"
+          element={
+            <CaptainProtectWrapper>
+              <CreateRoute />
             </CaptainProtectWrapper>
           }
         />

@@ -1,0 +1,27 @@
+const express = require("express");
+const router = express.Router();
+const { body } = require("express-validator");
+const captainRouteController = require("../controllers/captainRoute.controller");
+const { authCaptain } = require("../middlewares/auth.middleware");
+
+// POST /api/routes - Create & publish planned route
+router.post(
+  "/",
+  authCaptain,
+  [
+    body("startLocation.address").notEmpty().withMessage("Start location address is required"),
+    body("destination.address").notEmpty().withMessage("Destination address is required"),
+    body("departureDate").notEmpty().withMessage("Departure date is required"),
+    body("departureTime").notEmpty().withMessage("Departure time is required"),
+    body("availableSeats").isInt({ min: 1 }).withMessage("Available seats must be at least 1"),
+  ],
+  captainRouteController.createRoute
+);
+
+// GET /api/routes/my-routes - Get captain's published routes
+router.get("/my-routes", authCaptain, captainRouteController.getMyRoutes);
+
+// DELETE /api/routes/:id - Delete a published route
+router.delete("/:id", authCaptain, captainRouteController.deleteRoute);
+
+module.exports = router;

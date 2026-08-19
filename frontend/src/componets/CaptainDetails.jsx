@@ -14,6 +14,9 @@ const CaptainDetails = () => {
     "";
   const name = `${firstName} ${lastName}`.trim();
 
+  const rawEarnings = captain?.earnings ?? 0;
+  const formattedEarnings = typeof rawEarnings === "number" ? rawEarnings.toLocaleString("en-IN") : rawEarnings;
+
   return (
     <div>
       {/* Driver Info Header */}
@@ -32,7 +35,7 @@ const CaptainDetails = () => {
           </div>
         </div>
         <div className="text-right">
-          <h4 className="text-xl font-extrabold text-gray-900">₹{captain?.earnings ?? "295.20"}</h4>
+          <h4 className="text-xl font-extrabold text-gray-900">₹{formattedEarnings}</h4>
           <p className="text-xs font-semibold text-emerald-600">Earned today</p>
         </div>
       </div>

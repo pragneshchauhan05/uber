@@ -1,5 +1,6 @@
 const crypto = require("crypto");
 const ridemodel = require("../models/ride.model");
+const captainModel = require("../models/captain.model");
 const mapService = require("./maps.service");
 
 // Fare rates per vehicle type (₹)
@@ -180,6 +181,12 @@ module.exports.endRide = async ({ rideId, captain }) => {
     { _id: rideId },
     { status: "completed" },
   );
+
+  if (ride.fare) {
+    await captainModel.findByIdAndUpdate(captain._id, {
+      $inc: { earnings: ride.fare },
+    });
+  }
 
   return ride;
 };

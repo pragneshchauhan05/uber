@@ -131,7 +131,9 @@ module.exports.endRide = async (req, res) => {
       data: ride,
     });
 
-    return res.status(200).json(ride);
+    const updatedCaptain = await captainModel.findById(req.captain._id);
+
+    return res.status(200).json({ ride, captain: updatedCaptain });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: err.message });

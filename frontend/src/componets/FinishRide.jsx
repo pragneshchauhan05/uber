@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { getApiBaseUrl } from "../config";
+import { CaptainDataContext } from "../Context/CaptainContext";
 
 const formatPrice = (val) => {
   if (val === undefined || val === null || val === "---") return "0";
@@ -11,6 +12,7 @@ const formatPrice = (val) => {
 
 const FinishRide = (props) => {
   const navigate = useNavigate();
+  const [, setCaptain] = useContext(CaptainDataContext);
 
   const userFirstName = props.ride?.user?.fullname?.firstname || "User";
   const userLastName = props.ride?.user?.fullname?.lastname || "";
@@ -25,9 +27,8 @@ const FinishRide = (props) => {
   const endRide = async () => {
     try {
       if (props.ride?._id) {
-        await axios.post(
+        const response = await axios.post(
           `${getApiBaseUrl()}/rides/end-ride`,
-
           {
             rideId: props.ride._id,
           },
@@ -37,6 +38,10 @@ const FinishRide = (props) => {
             },
           },
         );
+
+        if (response.data?.captain) {
+          setCaptain(response.data.captain);
+        }
       }
       sessionStorage.removeItem("captainActiveRide");
       navigate("/captain-home");

@@ -65,6 +65,10 @@ const captainSchema = new mongoose.Schema({
       type: Number,
     },
   },
+  earnings: {
+    type: Number,
+    default: 0,
+  },
 });
 
 captainSchema.methods.generateAuthToken = function () {

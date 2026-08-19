@@ -513,19 +513,27 @@ const Home = () => {
 
         {/* Bottom Booking Interface */}
         <div className="flex flex-col justify-end h-full absolute inset-0 z-10 pointer-events-none">
-          <div className="bg-white p-5 sm:p-6 rounded-t-3xl shadow-2xl relative pointer-events-auto border-t border-gray-100">
+          <div
+            className={`bg-white p-5 sm:p-6 shadow-2xl relative pointer-events-auto border-t border-gray-100 transition-all duration-400 ease-in-out flex flex-col justify-between ${
+              panelOpen
+                ? "h-full rounded-none z-30"
+                : "h-auto rounded-t-3xl"
+            }`}
+          >
             <h5
               onClick={() => {
                 setPanelOpen(false);
               }}
               ref={panelCloseRef}
-              className="absolute opacity-0 top-4 right-5 text-gray-500 hover:text-black cursor-pointer text-2xl transition-all"
+              className={`absolute top-4 right-5 text-gray-500 hover:text-black cursor-pointer text-2xl transition-all z-20 ${
+                panelOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+              }`}
             >
               <i className="ri-arrow-down-wide-line"></i>
             </h5>
 
             {/* Mode Switcher Tabs */}
-            <div className="flex items-center bg-gray-100 p-1 rounded-2xl mb-4">
+            <div className="flex items-center bg-gray-100 p-1 rounded-2xl mb-4 shrink-0">
               <button
                 type="button"
                 onClick={() => setActiveTab("instant")}
@@ -551,12 +559,12 @@ const Home = () => {
             </div>
 
             {activeTab === "instant" ? (
-              <>
-                <h4 className="text-xl font-extrabold text-gray-900 tracking-tight mb-4">
+              <div className="flex flex-col h-full overflow-hidden">
+                <h4 className="text-xl font-extrabold text-gray-900 tracking-tight mb-4 shrink-0">
                   Find a Trip
                 </h4>
 
-                <form onSubmit={submitHandler} className="relative space-y-3">
+                <form onSubmit={submitHandler} className="relative space-y-3 shrink-0">
                   {/* Connecting Line Indicator */}
                   <div className="absolute left-4 top-4 bottom-4 w-0.5 bg-gray-300 flex flex-col justify-between items-center py-2 z-10">
                     <div className="w-2.5 h-2.5 bg-black rounded-full"></div>
@@ -630,20 +638,8 @@ const Home = () => {
                   </div>
                 </form>
 
-                {panelOpen && (
-                  <div className="mt-3 pt-3 border-t border-gray-100 max-h-64 overflow-y-auto">
-                    <div className="flex items-center justify-between mb-2 px-1">
-                      <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                        Select {activeField === "pickup" ? "Pickup" : "Destination"} Location
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setPanelOpen(false)}
-                        className="text-xs font-bold text-gray-500 hover:text-black cursor-pointer flex items-center gap-0.5"
-                      >
-                        <i className="ri-close-line text-base"></i> Close
-                      </button>
-                    </div>
+                {panelOpen ? (
+                  <div className="flex-1 overflow-y-auto mt-4 pt-2 border-t border-gray-100">
                     <LocationSearchPanel
                       suggestions={suggestions}
                       setPickup={setPickup}
@@ -653,16 +649,16 @@ const Home = () => {
                       setVehiclePanelOpen={setVehiclePanelOpen}
                     />
                   </div>
+                ) : (
+                  <button
+                    onClick={findTrip}
+                    className="w-full bg-black hover:bg-gray-800 active:scale-[0.99] transition-all duration-200 text-white py-3.5 rounded-2xl mt-4 font-bold text-base shadow-xl shadow-black/10 flex justify-center items-center cursor-pointer shrink-0"
+                  >
+                    Search Rides
+                    <i className="ri-arrow-right-line ml-2 text-lg"></i>
+                  </button>
                 )}
-
-                <button
-                  onClick={findTrip}
-                  className="w-full bg-black hover:bg-gray-800 active:scale-[0.99] transition-all duration-200 text-white py-3.5 rounded-2xl mt-4 font-bold text-base shadow-xl shadow-black/10 flex justify-center items-center cursor-pointer"
-                >
-                  Search Rides
-                  <i className="ri-arrow-right-line ml-2 text-lg"></i>
-                </button>
-              </>
+              </div>
             ) : (
               <CaptainRouteList onSelectCaptainRoute={handleSelectCaptainRoute} />
             )}

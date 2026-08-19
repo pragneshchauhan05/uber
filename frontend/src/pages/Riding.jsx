@@ -4,6 +4,12 @@ import { SocketContext } from "../Context/SocketContext";
 import { UserDataContext } from "../Context/UserContext";
 import LiveTraking from "../componets/LiveTraking";
 
+const formatPrice = (val) => {
+  if (val === undefined || val === null || val === "---") return "0";
+  const num = Number(val);
+  return isNaN(num) ? "0" : num.toLocaleString("en-IN");
+};
+
 function Riding() {
   const location = useLocation();
   const passedRide = location.state?.ride;
@@ -135,7 +141,7 @@ function Riding() {
                   </span>
                 </div>
                 <span className="text-base font-extrabold text-gray-900">
-                  ₹{ride?.fare ?? "0"}
+                  ₹{formatPrice(ride?.fare)}
                 </span>
               </div>
             </div>

@@ -3,6 +3,12 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { getApiBaseUrl } from "../config";
 
+const formatPrice = (val) => {
+  if (val === undefined || val === null || val === "---") return "0";
+  const num = Number(val);
+  return isNaN(num) ? "0" : num.toLocaleString("en-IN");
+};
+
 const ConfirmRidePop = (props) => {
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -104,7 +110,7 @@ const ConfirmRidePop = (props) => {
         </div>
         <div className="text-right">
           <h3 className="text-xl font-extrabold text-gray-900">
-            ₹{props.ride?.fare ?? "0"}
+            ₹{formatPrice(props.ride?.fare)}
           </h3>
         </div>
       </div>

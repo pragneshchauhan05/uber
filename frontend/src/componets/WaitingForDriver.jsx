@@ -2,6 +2,12 @@ import React from "react";
 import axios from "axios";
 import { getApiBaseUrl } from "../config";
 
+const formatPrice = (val) => {
+  if (val === undefined || val === null || val === "---") return "0";
+  const num = Number(val);
+  return isNaN(num) ? "0" : num.toLocaleString("en-IN");
+};
+
 const WaitingForDriver = (props) => {
   const captainFirstName =
     props.ride?.captain?.fullname?.firstname || "Captain";
@@ -130,7 +136,7 @@ const WaitingForDriver = (props) => {
         <div className="flex items-center justify-between pt-2 border-t border-gray-200/60">
           <span className="text-xs font-semibold text-gray-500">Trip Fare</span>
           <span className="text-base font-extrabold text-gray-900">
-            ₹{props.ride?.fare ?? "0"}
+            ₹{formatPrice(props.ride?.fare)}
           </span>
         </div>
       </div>

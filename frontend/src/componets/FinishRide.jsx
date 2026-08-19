@@ -3,6 +3,12 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { getApiBaseUrl } from "../config";
 
+const formatPrice = (val) => {
+  if (val === undefined || val === null || val === "---") return "0";
+  const num = Number(val);
+  return isNaN(num) ? "0" : num.toLocaleString("en-IN");
+};
+
 const FinishRide = (props) => {
   const navigate = useNavigate();
 
@@ -79,7 +85,7 @@ const FinishRide = (props) => {
         </div>
         <div className="text-right">
           <h3 className="text-xl font-extrabold text-emerald-600">
-            ₹{props.ride?.fare ?? "0"}
+            ₹{formatPrice(props.ride?.fare)}
           </h3>
           <p className="text-[10px] font-bold text-emerald-700 uppercase">
             Collect Cash

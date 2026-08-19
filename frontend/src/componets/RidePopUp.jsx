@@ -2,6 +2,12 @@ import React from "react";
 import axios from "axios";
 import { getApiBaseUrl } from "../config";
 
+const formatPrice = (val) => {
+  if (val === undefined || val === null || val === "---") return "0";
+  const num = Number(val);
+  return isNaN(num) ? "0" : num.toLocaleString("en-IN");
+};
+
 const RidePopUp = (props) => {
   const userFirstName = props.ride?.user?.fullname?.firstname || "User";
   const userLastName = props.ride?.user?.fullname?.lastname || "";
@@ -83,7 +89,7 @@ const RidePopUp = (props) => {
         </div>
         <div className="text-right">
           <h3 className="text-xl font-extrabold text-gray-900">
-            ₹{props.ride?.fare ?? "0"}
+            ₹{formatPrice(props.ride?.fare)}
           </h3>
           <p className="text-[10px] font-bold text-gray-400 uppercase">
             Est. Earnings

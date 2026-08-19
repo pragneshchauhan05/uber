@@ -1,5 +1,11 @@
 import React from "react";
 
+const formatPrice = (val) => {
+  if (val === undefined || val === null || val === "---") return "---";
+  const num = Number(val);
+  return isNaN(num) ? "---" : num.toLocaleString("en-IN");
+};
+
 const LookingForDriver = (props) => {
   const vehicleImages = {
     car: "https://cn-geo1.uber.com/image-proc/crop/resizecrop/udam/format=auto/width=956/height=538/srcb64=aHR0cHM6Ly90Yi1zdGF0aWMudWJlci5jb20vcHJvZC91ZGFtLWFzc2V0cy82ZWU1MGMxYi0yMTc0LTRjOTctODNhMS1iZmQ0NTQ0Njg5ZDAucG5n",
@@ -60,7 +66,7 @@ const LookingForDriver = (props) => {
               Estimated Fare
             </span>
             <span className="text-base font-extrabold text-gray-900">
-              ₹{props.fare?.[props.vehicleType] ?? "---"}
+              ₹{formatPrice(props.fare?.[props.vehicleType])}
             </span>
           </div>
         </div>

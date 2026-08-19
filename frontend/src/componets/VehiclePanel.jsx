@@ -1,5 +1,11 @@
 import React from "react";
 
+const formatPrice = (val) => {
+  if (val === undefined || val === null || val === "---") return "---";
+  const num = Number(val);
+  return isNaN(num) ? "---" : num.toLocaleString("en-IN");
+};
+
 const VehiclePanel = (props) => {
   const get12HourTime = (minutesToAdd = 0) => {
     const date = new Date(Date.now() + minutesToAdd * 60 * 1000);
@@ -62,7 +68,7 @@ const VehiclePanel = (props) => {
         </div>
         <div className="text-right">
           <h2 className="text-xl font-extrabold text-gray-900">
-            ₹{props.fare?.car ?? "---"}
+            ₹{formatPrice(props.fare?.car)}
           </h2>
         </div>
       </div>
@@ -92,7 +98,7 @@ const VehiclePanel = (props) => {
         </div>
         <div className="text-right">
           <h2 className="text-xl font-extrabold text-gray-900">
-            ₹{props.fare?.motorcycle ?? "---"}
+            ₹{formatPrice(props.fare?.motorcycle)}
           </h2>
         </div>
       </div>
@@ -124,7 +130,7 @@ const VehiclePanel = (props) => {
         </div>
         <div className="text-right">
           <h2 className="text-xl font-extrabold text-gray-900">
-            ₹{props.fare?.auto ?? "---"}
+            ₹{formatPrice(props.fare?.auto)}
           </h2>
         </div>
       </div>

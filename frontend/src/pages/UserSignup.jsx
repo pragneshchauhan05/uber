@@ -9,6 +9,9 @@ const UserSignup = () => {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [serverError, setServerError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const [, setUser] = useContext(UserDataContext);
@@ -18,8 +21,55 @@ const UserSignup = () => {
     return <Navigate to="/home" replace />;
   }
 
+  const validate = (fieldValues = { firstName, email, password }) => {
+    let temp = { ...errors };
+
+    if ("firstName" in fieldValues) {
+      if (!fieldValues.firstName.trim()) {
+        temp.firstName = "First name is required.";
+      } else if (fieldValues.firstName.trim().length < 3) {
+        temp.firstName = "First name must be at least 3 characters.";
+      } else {
+        temp.firstName = "";
+      }
+    }
+
+    if ("email" in fieldValues) {
+      if (!fieldValues.email.trim()) {
+        temp.email = "Email address is required.";
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fieldValues.email.trim())) {
+        temp.email = "Please enter a valid email address.";
+      } else {
+        temp.email = "";
+      }
+    }
+
+    if ("password" in fieldValues) {
+      if (!fieldValues.password) {
+        temp.password = "Password is required.";
+      } else if (fieldValues.password.length < 6) {
+        temp.password = "Password must be at least 6 characters.";
+      } else {
+        temp.password = "";
+      }
+    }
+
+    setErrors({ ...temp });
+    return Object.values(temp).every((x) => x === "");
+  };
+
+  const handleBlur = (field) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    validate({ [field]: field === "firstName" ? firstName : field === "email" ? email : password });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setServerError("");
+    setTouched({ firstName: true, email: true, password: true });
+
+    if (!validate()) return;
+
     setIsLoading(true);
 
     const newUser = {
@@ -43,9 +93,10 @@ const UserSignup = () => {
       }
     } catch (error) {
       console.error("Signup error:", error);
-      alert(
+      setServerError(
         error?.response?.data?.message ||
-          "Unable to register. Check your credentials or connection.",
+          error?.response?.data?.errors?.[0]?.msg ||
+          "Unable to register. Please check your inputs.",
       );
     } finally {
       setIsLoading(false);
@@ -63,29 +114,50 @@ const UserSignup = () => {
             </span>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {serverError && (
+            <div className="mb-5 p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2 animate-shake">
+              <i className="ri-error-warning-fill text-lg text-red-500 shrink-0"></i>
+              <span>{serverError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div>
               <label className="block text-sm font-semibold text-gray-800 mb-1">
                 What's your name?
               </label>
               <div className="grid grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  value={firstName}
-                  className="w-full bg-gray-100/80 border border-gray-200 rounded-xl px-4 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none transition-all duration-200"
-                  required
-                  minLength={3}
-                  placeholder="First name"
-                  onChange={(e) => setFirstName(e.target.value)}
-                />
-                <input
-                  type="text"
-                  value={lastName}
-                  className="w-full bg-gray-100/80 border border-gray-200 rounded-xl px-4 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none transition-all duration-200"
-                  required
-                  placeholder="Last name"
-                  onChange={(e) => setLastName(e.target.value)}
-                />
+                <div>
+                  <input
+                    type="text"
+                    value={firstName}
+                    className={`w-full bg-gray-100/80 border rounded-xl px-4 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none transition-all duration-200 ${
+                      touched.firstName && errors.firstName
+                        ? "border-red-500 bg-red-50/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                        : "border-gray-200 focus:border-black focus:ring-2 focus:ring-black/10"
+                    }`}
+                    placeholder="First name"
+                    onChange={(e) => {
+                      setFirstName(e.target.value);
+                      if (touched.firstName) validate({ firstName: e.target.value });
+                    }}
+                    onBlur={() => handleBlur("firstName")}
+                  />
+                  {touched.firstName && errors.firstName && (
+                    <p className="text-[11px] font-semibold text-red-500 mt-1">
+                      {errors.firstName}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <input
+                    type="text"
+                    value={lastName}
+                    className="w-full bg-gray-100/80 border border-gray-200 rounded-xl px-4 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none transition-all duration-200"
+                    placeholder="Last name"
+                    onChange={(e) => setLastName(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
 
@@ -96,11 +168,23 @@ const UserSignup = () => {
               <input
                 type="email"
                 value={email}
-                className="w-full bg-gray-100/80 border border-gray-200 rounded-xl px-4 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none transition-all duration-200"
-                required
+                className={`w-full bg-gray-100/80 border rounded-xl px-4 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none transition-all duration-200 ${
+                  touched.email && errors.email
+                    ? "border-red-500 bg-red-50/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                    : "border-gray-200 focus:border-black focus:ring-2 focus:ring-black/10"
+                }`}
                 placeholder="email@example.com"
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (touched.email) validate({ email: e.target.value });
+                }}
+                onBlur={() => handleBlur("email")}
               />
+              {touched.email && errors.email && (
+                <p className="text-xs font-semibold text-red-500 mt-1 flex items-center gap-1">
+                  <i className="ri-error-warning-line"></i> {errors.email}
+                </p>
+              )}
             </div>
 
             <div>
@@ -110,12 +194,23 @@ const UserSignup = () => {
               <input
                 type="password"
                 value={password}
-                className="w-full bg-gray-100/80 border border-gray-200 rounded-xl px-4 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none transition-all duration-200"
-                required
-                minLength={6}
+                className={`w-full bg-gray-100/80 border rounded-xl px-4 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none transition-all duration-200 ${
+                  touched.password && errors.password
+                    ? "border-red-500 bg-red-50/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                    : "border-gray-200 focus:border-black focus:ring-2 focus:ring-black/10"
+                }`}
                 placeholder="Min 6 characters"
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (touched.password) validate({ password: e.target.value });
+                }}
+                onBlur={() => handleBlur("password")}
               />
+              {touched.password && errors.password && (
+                <p className="text-xs font-semibold text-red-500 mt-1 flex items-center gap-1">
+                  <i className="ri-error-warning-line"></i> {errors.password}
+                </p>
+              )}
             </div>
 
             <button

@@ -8,6 +8,9 @@ import { getApiBaseUrl } from "../config";
 const CaptainLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [serverError, setServerError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
@@ -19,8 +22,61 @@ const CaptainLogin = () => {
     return <Navigate to={target} replace />;
   }
 
+  const validateEmail = (val) => {
+    if (!val.trim()) return "Email address is required.";
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(val.trim())) return "Please enter a valid email address (e.g. captain@example.com).";
+    return "";
+  };
+
+  const validatePassword = (val) => {
+    if (!val) return "Password is required.";
+    if (val.length < 6) return "Password must be at least 6 characters long.";
+    return "";
+  };
+
+  const handleBlur = (field) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    if (field === "email") {
+      setErrors((prev) => ({ ...prev, email: validateEmail(email) }));
+    }
+    if (field === "password") {
+      setErrors((prev) => ({ ...prev, password: validatePassword(password) }));
+    }
+  };
+
+  const handleEmailChange = (e) => {
+    const val = e.target.value;
+    setEmail(val);
+    setServerError("");
+    if (touched.email) {
+      setErrors((prev) => ({ ...prev, email: validateEmail(val) }));
+    }
+  };
+
+  const handlePasswordChange = (e) => {
+    const val = e.target.value;
+    setPassword(val);
+    setServerError("");
+    if (touched.password) {
+      setErrors((prev) => ({ ...prev, password: validatePassword(val) }));
+    }
+  };
+
   const submitHandler = async (e) => {
     e.preventDefault();
+    setServerError("");
+
+    const emailErr = validateEmail(email);
+    const passwordErr = validatePassword(password);
+
+    setTouched({ email: true, password: true });
+    setErrors({ email: emailErr, password: passwordErr });
+
+    if (emailErr || passwordErr) {
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -42,14 +98,12 @@ const CaptainLogin = () => {
       const message =
         resData?.message ||
         resData?.errors?.[0]?.msg ||
-        "Login failed. Please check your credentials and connection.";
-      alert(message);
+        "Invalid email or password. Please check your credentials.";
+      setServerError(message);
     } finally {
-
       setIsLoading(false);
     }
   };
-
 
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center items-center p-0 md:p-6">
@@ -62,19 +116,35 @@ const CaptainLogin = () => {
             </span>
           </div>
 
-          <form onSubmit={submitHandler} className="space-y-5">
+          {serverError && (
+            <div className="mb-5 p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2 animate-shake">
+              <i className="ri-error-warning-fill text-lg text-red-500 shrink-0"></i>
+              <span>{serverError}</span>
+            </div>
+          )}
+
+          <form onSubmit={submitHandler} className="space-y-5" noValidate>
             <div>
               <label className="block text-sm font-semibold text-gray-800 mb-1.5">
                 Captain Email
               </label>
               <input
                 type="email"
-                className="w-full bg-gray-100/80 border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none transition-all duration-200"
+                className={`w-full bg-gray-100/80 border rounded-xl px-4 py-3 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none transition-all duration-200 ${
+                  touched.email && errors.email
+                    ? "border-red-500 bg-red-50/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                    : "border-gray-200 focus:border-black focus:ring-2 focus:ring-black/10"
+                }`}
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                onChange={handleEmailChange}
+                onBlur={() => handleBlur("email")}
                 placeholder="captain@example.com"
               />
+              {touched.email && errors.email && (
+                <p className="text-xs font-semibold text-red-500 mt-1 flex items-center gap-1">
+                  <i className="ri-error-warning-line"></i> {errors.email}
+                </p>
+              )}
             </div>
 
             <div>
@@ -83,12 +153,21 @@ const CaptainLogin = () => {
               </label>
               <input
                 type="password"
-                className="w-full bg-gray-100/80 border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none transition-all duration-200"
+                className={`w-full bg-gray-100/80 border rounded-xl px-4 py-3 text-base text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none transition-all duration-200 ${
+                  touched.password && errors.password
+                    ? "border-red-500 bg-red-50/20 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                    : "border-gray-200 focus:border-black focus:ring-2 focus:ring-black/10"
+                }`}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+                onChange={handlePasswordChange}
+                onBlur={() => handleBlur("password")}
                 placeholder="Enter password"
               />
+              {touched.password && errors.password && (
+                <p className="text-xs font-semibold text-red-500 mt-1 flex items-center gap-1">
+                  <i className="ri-error-warning-line"></i> {errors.password}
+                </p>
+              )}
             </div>
 
             <button

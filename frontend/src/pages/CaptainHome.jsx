@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useContext } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
 import CaptainDetails from "../componets/CaptainDetails";
 import RidePopUp from "../componets/RidePopUp";
 import ConfirmRidePop from "../componets/ConfirmRidePop";
@@ -8,6 +9,7 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { SocketContext } from "../Context/SocketContext";
 import { CaptainDataContext } from "../Context/CaptainContext";
+import { getApiBaseUrl } from "../config";
 
 const CaptainHome = () => {
   const [ridePopUpPanel, setRidePopUpPanel] = useState(false);
@@ -18,7 +20,23 @@ const CaptainHome = () => {
   const confirmRidePopUpPanelRef = useRef(null);
 
   const { socket } = useContext(SocketContext);
-  const [captain] = useContext(CaptainDataContext);
+  const [captain, setCaptain] = useContext(CaptainDataContext);
+
+  useEffect(() => {
+    const token = localStorage.getItem("captainToken");
+    if (token) {
+      axios
+        .get(`${getApiBaseUrl()}/captains/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((res) => {
+          if (res.data?.captain) {
+            setCaptain(res.data.captain);
+          }
+        })
+        .catch((err) => console.error("Error fetching captain profile:", err));
+    }
+  }, []);
 
   useEffect(() => {
     if (captain && captain._id) {

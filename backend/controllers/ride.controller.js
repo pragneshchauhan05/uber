@@ -131,9 +131,25 @@ module.exports.endRide = async (req, res) => {
       data: ride,
     });
 
-    const updatedCaptain = await captainModel.findById(req.captain._id);
+    const completedRides = await rideModel.find({
+      captain: req.captain._id,
+      status: "completed",
+    });
 
-    return res.status(200).json({ ride, captain: updatedCaptain });
+    const totalEarnings = completedRides.reduce(
+      (sum, r) => sum + (Number(r.fare) || 0),
+      0
+    );
+
+    await captainModel.findByIdAndUpdate(req.captain._id, {
+      earnings: totalEarnings,
+    });
+
+    const updatedCaptain = await captainModel.findById(req.captain._id);
+    const captainObj = updatedCaptain ? updatedCaptain.toObject() : {};
+    captainObj.earnings = totalEarnings;
+
+    return res.status(200).json({ ride, captain: captainObj });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: err.message });

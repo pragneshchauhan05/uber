@@ -1,6 +1,7 @@
 const captainModel = require("../models/captain.model");
 const captainService = require("../services/captain.service");
 const blacklistTokenModel = require("../models/blackListToken");
+const rideModel = require("../models/ride.model");
 const { validationResult } = require("express-validator");
 
 module.exports.registerCaptain = async (req, res) => {
@@ -80,7 +81,24 @@ module.exports.loginCaptain = async (req, res) => {
 };
 
 module.exports.getCaptainProfile = async (req, res) => {
-  res.status(200).json({ captain: req.captain });
+  try {
+    const completedRides = await rideModel.find({
+      captain: req.captain._id,
+      status: "completed",
+    });
+    const calculatedEarnings = completedRides.reduce(
+      (sum, r) => sum + (Number(r.fare) || 0),
+      0
+    );
+
+    const captainObj = req.captain.toObject ? req.captain.toObject() : { ...req.captain };
+    captainObj.earnings = calculatedEarnings;
+
+    return res.status(200).json({ captain: captainObj });
+  } catch (err) {
+    console.error("Error in getCaptainProfile:", err);
+    return res.status(200).json({ captain: req.captain });
+  }
 };
 
 module.exports.logoutCaptain = async (req, res) => {

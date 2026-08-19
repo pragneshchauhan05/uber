@@ -9,6 +9,7 @@ import ConfirmedRide from "../componets/ConfirmedRide";
 import LookingForDriver from "../componets/LookingForDriver";
 import WaitingForDriver from "../componets/WaitingForDriver";
 import LiveTraking from "../componets/LiveTraking";
+import CaptainRouteList from "../componets/CaptainRouteList";
 import { useEffect, useContext } from "react";
 import { SocketContext } from "../Context/SocketContext";
 import { UserDataContext } from "../Context/UserContext";
@@ -40,12 +41,36 @@ const Home = () => {
   const [vehicleType, setVehicleType] = useState(() => sessionStorage.getItem("home_vehicleType") || null);
   const [suggestions, setSuggestions] = useState([]);
   const [activeField, setActiveField] = useState(null);
+  const [activeTab, setActiveTab] = useState("instant");
   const [requestedDate, setRequestedDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [requestedTime, setRequestedTime] = useState(() => new Date().toTimeString().slice(0, 5));
   const [pickupCoords, setPickupCoords] = useState(null);
   const [dropCoords, setDropCoords] = useState(null);
   const [isSubmittingRideRequest, setIsSubmittingRideRequest] = useState(false);
   const [rideRequestMessage, setRideRequestMessage] = useState("");
+
+  const handleSelectCaptainRoute = (routeItem) => {
+    if (routeItem?.startLocation?.address) {
+      setPickup(routeItem.startLocation.address);
+    }
+    if (routeItem?.destination?.address) {
+      setDestination(routeItem.destination.address);
+    }
+    if (routeItem?.startLocation?.lat && routeItem?.startLocation?.lng) {
+      setPickupCoords({
+        lat: Number(routeItem.startLocation.lat),
+        lng: Number(routeItem.startLocation.lng),
+      });
+    }
+    if (routeItem?.destination?.lat && routeItem?.destination?.lng) {
+      setDropCoords({
+        lat: Number(routeItem.destination.lat),
+        lng: Number(routeItem.destination.lng),
+      });
+    }
+    setActiveTab("instant");
+    findTrip();
+  };
   const [ride, setRide] = useState(() => {
     try {
       const saved = sessionStorage.getItem("home_ride");
@@ -488,7 +513,7 @@ const Home = () => {
 
         {/* Bottom Booking Interface */}
         <div className="flex flex-col justify-end h-full absolute inset-0 z-10 pointer-events-none">
-          <div className="bg-white p-5 sm:p-6 rounded-t-3xl shadow-2xl relative pointer-events-auto border-t border-gray-100 max-h-[85vh] overflow-y-auto">
+          <div className="bg-white p-5 sm:p-6 rounded-t-3xl shadow-2xl relative pointer-events-auto border-t border-gray-100">
             <h5
               onClick={() => {
                 setPanelOpen(false);
@@ -498,140 +523,124 @@ const Home = () => {
             >
               <i className="ri-arrow-down-wide-line"></i>
             </h5>
-            <h4 className="text-xl font-extrabold text-gray-900 tracking-tight mb-3">
-              Find a Trip
-            </h4>
 
-            <form onSubmit={handleFindRides} className="relative space-y-3">
-              {rideRequestMessage && (
-                <div className="bg-emerald-50 text-emerald-700 text-xs font-bold p-2.5 rounded-xl border border-emerald-200 text-center animate-fade-in">
-                  {rideRequestMessage}
-                </div>
-              )}
+            {/* Mode Switcher Tabs */}
+            <div className="flex items-center bg-gray-100 p-1 rounded-2xl mb-4">
+              <button
+                type="button"
+                onClick={() => setActiveTab("instant")}
+                className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                  activeTab === "instant"
+                    ? "bg-black text-white shadow-md"
+                    : "text-gray-600 hover:text-black"
+                }`}
+              >
+                <i className="ri-flashlight-line mr-1"></i> Instant Ride
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("captain-routes")}
+                className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                  activeTab === "captain-routes"
+                    ? "bg-black text-white shadow-md"
+                    : "text-gray-600 hover:text-black"
+                }`}
+              >
+                <i className="ri-map-pin-user-line mr-1"></i> Captain Routes
+              </button>
+            </div>
 
-              {/* Pickup Field */}
-              <div>
-                <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-1">
-                  Pickup
-                </label>
-                <div className="relative flex items-center">
-                  <input
-                    className="w-full bg-gray-100/90 border border-gray-200 pl-10 pr-10 py-2.5 text-sm font-semibold rounded-2xl text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none transition-all duration-200"
-                    type="text"
-                    placeholder="Select location"
-                    value={pickup}
-                    onClick={() => {
-                      setPanelOpen(true);
-                      setActiveField("pickup");
-                    }}
-                    onChange={handlePickupChange}
-                    required
-                  />
-                  <button
-                    type="button"
-                    title="Use Current Location"
-                    onClick={() => {
-                      if (navigator.geolocation) {
-                        setPickup("Locating current position...");
-                        navigator.geolocation.getCurrentPosition(
-                          async (position) => {
-                            const { latitude, longitude } = position.coords;
-                            setPickupCoords({ lat: latitude, lng: longitude });
-                            try {
-                              const response = await fetch(
-                                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
-                              );
-                              const data = await response.json();
-                              if (data && data.display_name) {
-                                setPickup(data.display_name);
-                              } else {
+            {activeTab === "instant" ? (
+              <>
+                <h4 className="text-xl font-extrabold text-gray-900 tracking-tight mb-4">
+                  Find a Trip
+                </h4>
+
+                <form onSubmit={submitHandler} className="relative space-y-3">
+                  {/* Connecting Line Indicator */}
+                  <div className="absolute left-4 top-4 bottom-4 w-0.5 bg-gray-300 flex flex-col justify-between items-center py-2 z-10">
+                    <div className="w-2.5 h-2.5 bg-black rounded-full"></div>
+                    <div className="w-2.5 h-2.5 bg-emerald-600 rounded-sm"></div>
+                  </div>
+
+                  <div className="relative flex items-center">
+                    <input
+                      className="w-full bg-gray-100/90 border border-gray-200 pl-11 pr-10 py-3 text-sm font-semibold rounded-2xl text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none transition-all duration-200"
+                      type="text"
+                      placeholder="Add a pick-up location"
+                      value={pickup}
+                      onClick={() => {
+                        setPanelOpen(true);
+                        setActiveField("pickup");
+                      }}
+                      onChange={handlePickupChange}
+                    />
+                    <button
+                      type="button"
+                      title="Use Current Location"
+                      onClick={() => {
+                        if (navigator.geolocation) {
+                          setPickup("Locating current position...");
+                          navigator.geolocation.getCurrentPosition(
+                            async (position) => {
+                              const { latitude, longitude } = position.coords;
+                              setPickupCoords({ lat: latitude, lng: longitude });
+                              try {
+                                const response = await fetch(
+                                  `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+                                );
+                                const data = await response.json();
+                                if (data && data.display_name) {
+                                  setPickup(data.display_name);
+                                } else {
+                                  setPickup(
+                                    `Current Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+                                  );
+                                }
+                              } catch (err) {
                                 setPickup(
                                   `Current Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
                                 );
                               }
-                            } catch (err) {
-                              setPickup(
-                                `Current Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
-                              );
-                            }
-                          },
-                          () => setPickup("Current Location"),
-                        );
-                      } else {
-                        setPickup("Current Location");
-                      }
-                    }}
-                    className="absolute right-3 text-gray-500 hover:text-black p-1 transition-colors cursor-pointer"
-                  >
-                    <i className="ri-navigation-fill text-blue-600 text-lg"></i>
-                  </button>
-                </div>
-              </div>
+                            },
+                            () => setPickup("Current Location"),
+                          );
+                        } else {
+                          setPickup("Current Location");
+                        }
+                      }}
+                      className="absolute right-3 text-gray-500 hover:text-black p-1 transition-colors cursor-pointer"
+                    >
+                      <i className="ri-navigation-fill text-blue-600 text-lg"></i>
+                    </button>
+                  </div>
 
-              {/* Drop Field */}
-              <div>
-                <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-1">
-                  Drop
-                </label>
-                <div className="relative flex items-center">
-                  <input
-                    className="w-full bg-gray-100/90 border border-gray-200 pl-10 pr-4 py-2.5 text-sm font-semibold rounded-2xl text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none transition-all duration-200"
-                    type="text"
-                    placeholder="Select location"
-                    value={destination}
-                    onClick={() => {
-                      setPanelOpen(true);
-                      setActiveField("destination");
-                    }}
-                    onChange={handleDestinationChange}
-                    required
-                  />
-                </div>
-              </div>
+                  <div className="relative">
+                    <input
+                      className="w-full bg-gray-100/90 border border-gray-200 pl-11 pr-4 py-3 text-sm font-semibold rounded-2xl text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none transition-all duration-200"
+                      type="text"
+                      placeholder="Enter your destination"
+                      value={destination}
+                      onClick={() => {
+                        setPanelOpen(true);
+                        setActiveField("destination");
+                      }}
+                      onChange={handleDestinationChange}
+                    />
+                  </div>
+                </form>
 
-              {/* Date & Time Fields */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-1">
-                    Date
-                  </label>
-                  <input
-                    type="date"
-                    className="w-full bg-gray-100/90 border border-gray-200 px-3 py-2 text-xs font-semibold rounded-2xl text-gray-900 focus:bg-white focus:border-black focus:outline-none transition-all duration-200"
-                    value={requestedDate}
-                    onChange={(e) => setRequestedDate(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-1">
-                    Time
-                  </label>
-                  <input
-                    type="time"
-                    className="w-full bg-gray-100/90 border border-gray-200 px-3 py-2 text-xs font-semibold rounded-2xl text-gray-900 focus:bg-white focus:border-black focus:outline-none transition-all duration-200"
-                    value={requestedTime}
-                    onChange={(e) => setRequestedTime(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSubmittingRideRequest}
-                className="w-full bg-black hover:bg-gray-800 active:scale-[0.99] transition-all duration-200 text-white py-3.5 rounded-2xl mt-3 font-bold text-base shadow-xl shadow-black/10 flex justify-center items-center cursor-pointer disabled:opacity-60"
-              >
-                {isSubmittingRideRequest ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                ) : (
-                  <>
-                    Find Rides
-                    <i className="ri-arrow-right-line ml-2 text-lg"></i>
-                  </>
-                )}
-              </button>
-            </form>
+                <button
+                  onClick={findTrip}
+                  className="w-full bg-black hover:bg-gray-800 active:scale-[0.99] transition-all duration-200 text-white py-3.5 rounded-2xl mt-4 font-bold text-base shadow-xl shadow-black/10 flex justify-center items-center cursor-pointer"
+                >
+                  Search Rides
+                  <i className="ri-arrow-right-line ml-2 text-lg"></i>
+                </button>
+              </>
+            ) : (
+              <CaptainRouteList onSelectCaptainRoute={handleSelectCaptainRoute} />
+            )}
           </div>
 
           <div

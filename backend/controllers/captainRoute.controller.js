@@ -106,3 +106,40 @@ module.exports.deleteRoute = async (req, res) => {
     return res.status(500).json({ message: error.message || "Failed to delete route" });
   }
 };
+
+module.exports.getAllActiveRoutes = async (req, res) => {
+  try {
+    const routes = await captainRouteModel
+      .find({ status: "ACTIVE" })
+      .populate("captain", "fullname fullName vehicle rating phone earnings socketId")
+      .sort({ departureDate: 1, departureTime: 1 });
+
+    return res.status(200).json({ routes });
+  } catch (error) {
+    console.error("Error fetching all active captain routes:", error);
+    return res.status(500).json({ message: error.message || "Failed to fetch active routes" });
+  }
+};
+
+module.exports.bookCaptainRoute = async (req, res) => {
+  try {
+    const { routeId } = req.body;
+    const route = await captainRouteModel.findById(routeId).populate("captain");
+
+    if (!route) {
+      return res.status(404).json({ message: "Captain route not found" });
+    }
+
+    if (route.availableSeats <= route.seatsBooked) {
+      return res.status(400).json({ message: "No seats available on this route" });
+    }
+
+    route.seatsBooked += 1;
+    await route.save();
+
+    return res.status(200).json({ message: "Seat booked successfully on captain route", route });
+  } catch (error) {
+    console.error("Error booking captain route:", error);
+    return res.status(500).json({ message: error.message || "Failed to book captain route" });
+  }
+};

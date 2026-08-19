@@ -10,13 +10,9 @@ const socket = io(getApiBaseUrl());
 
 const SocketProvider = ({ children }) => {
   useEffect(() => {
-    socket.on("connect", () => {
-      console.log("Connected to server");
-    });
+    socket.on("connect", () => {});
 
-    socket.on("disconnect", () => {
-      console.log("Disconnected from server");
-    });
+    socket.on("disconnect", () => {});
   }, []);
 
   const sendMessage = (eventName, message) => {

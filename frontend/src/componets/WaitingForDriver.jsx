@@ -93,10 +93,12 @@ const WaitingForDriver = (props) => {
         {/* Quick Contact Buttons */}
         <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-gray-200/60">
           <button className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-white border border-gray-200 text-gray-800 font-semibold text-xs hover:bg-gray-100 active:scale-[0.98] transition-all cursor-pointer">
-            <i className="ri-phone-fill text-emerald-600 text-sm"></i> Call Captain
+            <i className="ri-phone-fill text-emerald-600 text-sm"></i> Call
+            Captain
           </button>
           <button className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-white border border-gray-200 text-gray-800 font-semibold text-xs hover:bg-gray-100 active:scale-[0.98] transition-all cursor-pointer">
-            <i className="ri-chat-3-fill text-blue-600 text-sm"></i> Message Captain
+            <i className="ri-chat-3-fill text-blue-600 text-sm"></i> Message
+            Captain
           </button>
         </div>
       </div>
@@ -144,4 +146,3 @@ const WaitingForDriver = (props) => {
 };
 
 export default WaitingForDriver;
-

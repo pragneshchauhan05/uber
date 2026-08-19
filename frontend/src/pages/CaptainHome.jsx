@@ -45,7 +45,7 @@ const CaptainHome = () => {
     updateLocation();
 
     return () => clearInterval(updateLocationInterval);
-  }, [captain, socket]);
+  }, [captain?._id, socket]);
 
   useEffect(() => {
     socket.on("ride_request", (data) => {
@@ -66,7 +66,6 @@ const CaptainHome = () => {
       socket.off("ride-cancelled");
     };
   }, [socket]);
-
 
   useGSAP(
     function () {

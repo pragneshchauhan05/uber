@@ -15,7 +15,6 @@ import { UserDataContext } from "../Context/UserContext";
 import { useNavigate } from "react-router-dom";
 import { getApiBaseUrl } from "../config";
 
-
 const Home = () => {
   const [pickup, setPickup] = useState("");
   const [destination, setDestination] = useState("");
@@ -47,7 +46,7 @@ const Home = () => {
         userType: "user",
       });
     }
-  }, [user, socket]);
+  }, [user?._id, socket]);
 
   useEffect(() => {
     socket.on("ride-confirmed", (rideData) => {
@@ -77,7 +76,6 @@ const Home = () => {
     };
   }, [socket, navigate]);
 
-
   const findTrip = async () => {
     if (!pickup.trim() || !destination.trim()) {
       return;
@@ -86,16 +84,12 @@ const Home = () => {
     setPanelOpen(false);
 
     try {
-      const response = await axios.get(
-        `${getApiBaseUrl()}/rides/get-fare`,
-        {
-
-          params: { pickup, destination },
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+      const response = await axios.get(`${getApiBaseUrl()}/rides/get-fare`, {
+        params: { pickup, destination },
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-      );
+      });
       setFare(response.data);
     } catch (error) {
       console.error("Error fetching fare:", error);

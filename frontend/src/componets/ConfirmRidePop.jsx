@@ -13,18 +13,15 @@ const ConfirmRidePop = (props) => {
     setIsLoading(true);
 
     try {
-      const response = await axios.get(
-        `${getApiBaseUrl()}/rides/start-ride`,
-        {
-          params: {
-            rideId: props.ride?._id,
-            otp: otp,
-          },
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("captainToken")}`,
-          },
+      const response = await axios.get(`${getApiBaseUrl()}/rides/start-ride`, {
+        params: {
+          rideId: props.ride?._id,
+          otp: otp,
         },
-      );
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("captainToken")}`,
+        },
+      });
 
       if (response.status === 200) {
         props.setConfirmRidePopUpPanel(false);
@@ -67,7 +64,6 @@ const ConfirmRidePop = (props) => {
     }
   };
 
-
   return (
     <div>
       <div
@@ -98,12 +94,18 @@ const ConfirmRidePop = (props) => {
             alt={userName}
           />
           <div>
-            <h4 className="text-base font-bold text-gray-900 capitalize leading-tight">{userName}</h4>
-            <p className="text-xs text-gray-500 font-medium">Passenger Confirmed</p>
+            <h4 className="text-base font-bold text-gray-900 capitalize leading-tight">
+              {userName}
+            </h4>
+            <p className="text-xs text-gray-500 font-medium">
+              Passenger Confirmed
+            </p>
           </div>
         </div>
         <div className="text-right">
-          <h3 className="text-xl font-extrabold text-gray-900">₹{props.ride?.fare ?? "0"}</h3>
+          <h3 className="text-xl font-extrabold text-gray-900">
+            ₹{props.ride?.fare ?? "0"}
+          </h3>
         </div>
       </div>
 
@@ -111,11 +113,15 @@ const ConfirmRidePop = (props) => {
       <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 space-y-2 mb-4">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-black rounded-full"></div>
-          <h4 className="text-xs font-semibold text-gray-800 line-clamp-1">{props.ride?.pickup}</h4>
+          <h4 className="text-xs font-semibold text-gray-800 line-clamp-1">
+            {props.ride?.pickup}
+          </h4>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-emerald-600 rounded-sm"></div>
-          <h4 className="text-xs font-semibold text-gray-800 line-clamp-1">{props.ride?.destination}</h4>
+          <h4 className="text-xs font-semibold text-gray-800 line-clamp-1">
+            {props.ride?.destination}
+          </h4>
         </div>
       </div>
 

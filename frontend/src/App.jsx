@@ -13,9 +13,12 @@ import CaptainProtectWrapper from "./pages/CaptainProtectWrapper";
 import CaptainLogout from "./pages/CaptainLogout";
 import Riding from "./pages/Riding";
 import CaptainRiding from "./pages/CaptainRiding";
+import PWAInstallPrompt from "./componets/PWAInstallPrompt";
+
 const App = () => {
   return (
     <div>
+      <PWAInstallPrompt />
       <Routes>
         <Route path="/" element={<Start />} />
         <Route path="/login" element={<UserLogin />} />

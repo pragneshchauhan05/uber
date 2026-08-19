@@ -630,6 +630,31 @@ const Home = () => {
                   </div>
                 </form>
 
+                {panelOpen && (
+                  <div className="mt-3 pt-3 border-t border-gray-100 max-h-64 overflow-y-auto">
+                    <div className="flex items-center justify-between mb-2 px-1">
+                      <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                        Select {activeField === "pickup" ? "Pickup" : "Destination"} Location
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setPanelOpen(false)}
+                        className="text-xs font-bold text-gray-500 hover:text-black cursor-pointer flex items-center gap-0.5"
+                      >
+                        <i className="ri-close-line text-base"></i> Close
+                      </button>
+                    </div>
+                    <LocationSearchPanel
+                      suggestions={suggestions}
+                      setPickup={setPickup}
+                      setDestination={setDestination}
+                      activeField={activeField}
+                      setPanelOpen={setPanelOpen}
+                      setVehiclePanelOpen={setVehiclePanelOpen}
+                    />
+                  </div>
+                )}
+
                 <button
                   onClick={findTrip}
                   className="w-full bg-black hover:bg-gray-800 active:scale-[0.99] transition-all duration-200 text-white py-3.5 rounded-2xl mt-4 font-bold text-base shadow-xl shadow-black/10 flex justify-center items-center cursor-pointer"
@@ -641,20 +666,6 @@ const Home = () => {
             ) : (
               <CaptainRouteList onSelectCaptainRoute={handleSelectCaptainRoute} />
             )}
-          </div>
-
-          <div
-            ref={panelRef}
-            className="bg-white h-0 px-6 overflow-y-auto pointer-events-auto"
-          >
-            <LocationSearchPanel
-              suggestions={suggestions}
-              setPickup={setPickup}
-              setDestination={setDestination}
-              activeField={activeField}
-              setPanelOpen={setPanelOpen}
-              setVehiclePanelOpen={setVehiclePanelOpen}
-            />
           </div>
         </div>
 

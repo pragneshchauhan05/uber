@@ -3,11 +3,12 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { UserDataContext } from "../Context/UserContext";
 
+import { getApiBaseUrl } from "../config";
+
 const UserLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
 
   const [, setUser] = useContext(UserDataContext);
   const navigate = useNavigate();
@@ -15,8 +16,6 @@ const UserLogin = () => {
   const submitHandler = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setErrorMessage("");
-
     const userData = {
       email,
       password,
@@ -38,13 +37,13 @@ const UserLogin = () => {
     } catch (err) {
       console.error("User login error:", err);
       const resData = err.response?.data;
-      if (!err.response) {
-        setErrorMessage("Server connection failed. If backend is on Render free tier, please wait 30s for server cold start and try again.");
-      } else {
-        const msg = resData?.message || resData?.errors?.[0]?.msg || "Invalid login credentials. Please check your details or create an account.";
-        setErrorMessage(msg);
-      }
+      const message =
+        resData?.message ||
+        resData?.errors?.[0]?.msg ||
+        "Login failed. Please check your credentials and connection.";
+      alert(message);
     } finally {
+
       setIsLoading(false);
     }
   };
@@ -60,13 +59,6 @@ const UserLogin = () => {
               Rider Login
             </span>
           </div>
-
-          {errorMessage && (
-            <div className="mb-4 p-3.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl flex items-start gap-2.5 shadow-sm animate-fade-in">
-              <i className="ri-error-warning-line text-lg text-red-500 shrink-0 mt-0.5"></i>
-              <span>{errorMessage}</span>
-            </div>
-          )}
 
           <form onSubmit={submitHandler} className="space-y-5">
             <div>

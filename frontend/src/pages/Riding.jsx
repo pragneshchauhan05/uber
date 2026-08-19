@@ -35,7 +35,16 @@ function Riding() {
   useEffect(() => {
     socket.on("ride-ended", () => {
       sessionStorage.removeItem("activeRide");
-      navigate("/home");
+      sessionStorage.removeItem("home_pickup");
+      sessionStorage.removeItem("home_destination");
+      sessionStorage.removeItem("home_vehiclePanelOpen");
+      sessionStorage.removeItem("home_confirmedRide");
+      sessionStorage.removeItem("home_vehicleFound");
+      sessionStorage.removeItem("home_waitingForDriver");
+      sessionStorage.removeItem("home_fare");
+      sessionStorage.removeItem("home_vehicleType");
+      sessionStorage.removeItem("home_ride");
+      navigate("/home", { replace: true, state: { resetPanels: true } });
     });
 
     return () => {

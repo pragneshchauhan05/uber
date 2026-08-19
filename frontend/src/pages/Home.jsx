@@ -12,7 +12,7 @@ import LiveTraking from "../componets/LiveTraking";
 import { useEffect, useContext } from "react";
 import { SocketContext } from "../Context/SocketContext";
 import { UserDataContext } from "../Context/UserContext";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { getApiBaseUrl } from "../config";
 
 const Home = () => {
@@ -50,8 +50,39 @@ const Home = () => {
   });
 
   const navigate = useNavigate();
+  const location = useLocation();
   const { socket } = useContext(SocketContext);
   const [user] = useContext(UserDataContext);
+
+  const resetAllPanels = () => {
+    setWaitingForDriver(false);
+    setVehicleFound(false);
+    setConfirmedRide(false);
+    setVehiclePanelOpen(false);
+    setPanelOpen(false);
+    setPickup("");
+    setDestination("");
+    setFare({});
+    setVehicleType(null);
+    setRide(null);
+    sessionStorage.removeItem("activeRide");
+    sessionStorage.removeItem("home_pickup");
+    sessionStorage.removeItem("home_destination");
+    sessionStorage.removeItem("home_vehiclePanelOpen");
+    sessionStorage.removeItem("home_confirmedRide");
+    sessionStorage.removeItem("home_vehicleFound");
+    sessionStorage.removeItem("home_waitingForDriver");
+    sessionStorage.removeItem("home_fare");
+    sessionStorage.removeItem("home_vehicleType");
+    sessionStorage.removeItem("home_ride");
+  };
+
+  useEffect(() => {
+    if (location.state?.resetPanels) {
+      resetAllPanels();
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state]);
 
   useEffect(() => {
     sessionStorage.setItem("home_pickup", pickup);
@@ -86,23 +117,18 @@ const Home = () => {
       navigate("/riding", { state: { ride: rideData } });
     });
 
+    socket.on("ride-ended", () => {
+      resetAllPanels();
+    });
+
     socket.on("ride-cancelled", () => {
-      setWaitingForDriver(false);
-      setVehicleFound(false);
-      setConfirmedRide(false);
-      setVehiclePanelOpen(false);
-      setPanelOpen(false);
-      setRide(null);
-      sessionStorage.removeItem("home_vehiclePanelOpen");
-      sessionStorage.removeItem("home_confirmedRide");
-      sessionStorage.removeItem("home_vehicleFound");
-      sessionStorage.removeItem("home_waitingForDriver");
-      sessionStorage.removeItem("home_ride");
+      resetAllPanels();
     });
 
     return () => {
       socket.off("ride-confirmed");
       socket.off("ride-started");
+      socket.off("ride-ended");
       socket.off("ride-cancelled");
     };
   }, [socket, navigate]);

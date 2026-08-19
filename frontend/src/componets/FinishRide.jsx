@@ -32,9 +32,11 @@ const FinishRide = (props) => {
           },
         );
       }
+      sessionStorage.removeItem("captainActiveRide");
       navigate("/captain-home");
     } catch (err) {
       console.error("Error ending ride:", err);
+      sessionStorage.removeItem("captainActiveRide");
       navigate("/captain-home");
     }
   };

@@ -1,5 +1,5 @@
-import React from "react";
-import { Routes, Route } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Routes, Route, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
 import UserLogin from "./pages/UserLogin";
 import UserSignup from "./pages/UserSignup";
@@ -16,6 +16,20 @@ import CaptainRiding from "./pages/CaptainRiding";
 import PWAInstallPrompt from "./componets/PWAInstallPrompt";
 
 const App = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (
+      location.pathname !== "/" &&
+      location.pathname !== "/login" &&
+      location.pathname !== "/signup" &&
+      location.pathname !== "/captain-login" &&
+      location.pathname !== "/captain-signup"
+    ) {
+      sessionStorage.setItem("lastPath", location.pathname);
+    }
+  }, [location.pathname]);
+
   return (
     <div>
       <PWAInstallPrompt />

@@ -9,7 +9,13 @@ const CaptainRiding = () => {
   const [finishRidePanel, setFinishRidePanel] = useState(false);
   const finishRidePanelRef = useRef(null);
   const location = useLocation();
-  const rideData = location.state?.ride;
+  const passedRide = location.state?.ride;
+
+  if (passedRide) {
+    sessionStorage.setItem("captainActiveRide", JSON.stringify(passedRide));
+  }
+
+  const rideData = passedRide || JSON.parse(sessionStorage.getItem("captainActiveRide") || "null");
 
   const distanceKm = rideData?.distance
     ? typeof rideData.distance === "number"

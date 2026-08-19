@@ -14,7 +14,9 @@ const UserLogin = () => {
   const navigate = useNavigate();
 
   if (localStorage.getItem("token")) {
-    return <Navigate to="/home" replace />;
+    const lastPath = sessionStorage.getItem("lastPath");
+    const target = lastPath && lastPath !== "/" && !lastPath.includes("login") ? lastPath : "/home";
+    return <Navigate to={target} replace />;
   }
 
   const submitHandler = async (e) => {

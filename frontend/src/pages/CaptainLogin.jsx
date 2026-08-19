@@ -14,7 +14,9 @@ const CaptainLogin = () => {
   const [, setCaptain] = useContext(CaptainDataContext);
 
   if (localStorage.getItem("captainToken")) {
-    return <Navigate to="/captain-home" replace />;
+    const lastPath = sessionStorage.getItem("lastPath");
+    const target = lastPath && lastPath !== "/" && !lastPath.includes("login") ? lastPath : "/captain-home";
+    return <Navigate to={target} replace />;
   }
 
   const submitHandler = async (e) => {

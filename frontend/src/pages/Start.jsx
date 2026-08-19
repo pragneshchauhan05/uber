@@ -4,13 +4,16 @@ import { Link, Navigate } from "react-router-dom";
 const Start = () => {
   const userToken = localStorage.getItem("token");
   const captainToken = localStorage.getItem("captainToken");
+  const lastPath = sessionStorage.getItem("lastPath");
 
   if (userToken) {
-    return <Navigate to="/home" replace />;
+    const target = lastPath && lastPath !== "/" ? lastPath : "/home";
+    return <Navigate to={target} replace />;
   }
 
   if (captainToken) {
-    return <Navigate to="/captain-home" replace />;
+    const target = lastPath && lastPath !== "/" ? lastPath : "/captain-home";
+    return <Navigate to={target} replace />;
   }
   return (
     <div className="min-h-screen bg-gray-900 flex justify-center items-center p-0 md:p-6">

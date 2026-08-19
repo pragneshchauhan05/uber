@@ -29,6 +29,12 @@ module.exports.registerCaptain = async (req, res) => {
       vehicle.capacity,
     );
     const token = captain.generateAuthToken();
+    res.cookie("token", token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: false,
+      maxAge: 24 * 60 * 60 * 1000,
+    });
     return res.status(201).json({ token, captain });
   } catch (error) {
     console.error("Captain registration error:", error);

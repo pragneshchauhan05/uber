@@ -6,7 +6,13 @@ import LiveTraking from "../componets/LiveTraking";
 
 function Riding() {
   const location = useLocation();
-  const ride = location.state?.ride;
+  const passedRide = location.state?.ride;
+
+  if (passedRide) {
+    sessionStorage.setItem("activeRide", JSON.stringify(passedRide));
+  }
+
+  const ride = passedRide || JSON.parse(sessionStorage.getItem("activeRide") || "null");
   const navigate = useNavigate();
   const { socket } = useContext(SocketContext);
   const [user] = useContext(UserDataContext);
@@ -22,6 +28,7 @@ function Riding() {
 
   useEffect(() => {
     socket.on("ride-ended", () => {
+      sessionStorage.removeItem("activeRide");
       navigate("/home");
     });
 

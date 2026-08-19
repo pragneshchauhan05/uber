@@ -28,6 +28,12 @@ module.exports.registerUser = async (req, res, next) => {
       password: hashedPassword,
     });
     const token = user.generateAuthToken();
+    res.cookie("token", token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: false,
+      maxAge: 24 * 60 * 60 * 1000,
+    });
     return res.status(201).json({ user, token });
   } catch (error) {
     console.error("Register user error:", error);
@@ -54,6 +60,12 @@ module.exports.loginUser = async (req, res, next) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
     const token = user.generateAuthToken();
+    res.cookie("token", token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: false,
+      maxAge: 24 * 60 * 60 * 1000,
+    });
     return res.status(200).json({ user, token });
   } catch (error) {
     console.error("Login user error:", error);

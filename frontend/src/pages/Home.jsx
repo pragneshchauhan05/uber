@@ -16,8 +16,8 @@ import { useNavigate } from "react-router-dom";
 import { getApiBaseUrl } from "../config";
 
 const Home = () => {
-  const [pickup, setPickup] = useState("");
-  const [destination, setDestination] = useState("");
+  const [pickup, setPickup] = useState(() => sessionStorage.getItem("home_pickup") || "");
+  const [destination, setDestination] = useState(() => sessionStorage.getItem("home_destination") || "");
   const [panelOpen, setPanelOpen] = useState(false);
   const panelRef = useRef(null);
   const panelCloseRef = useRef(null);
@@ -25,19 +25,45 @@ const Home = () => {
   const confirmedRideRef = useRef(null);
   const vehicleFoundRef = useRef(null);
   const waitingForDriverRef = useRef(null);
-  const [vehiclePanelOpen, setVehiclePanelOpen] = useState(false);
-  const [confirmedRide, setConfirmedRide] = useState(false);
-  const [vehicleFound, setVehicleFound] = useState(false);
-  const [waitingForDriver, setWaitingForDriver] = useState(false);
-  const [fare, setFare] = useState({});
-  const [vehicleType, setVehicleType] = useState(null);
+  const [vehiclePanelOpen, setVehiclePanelOpen] = useState(() => sessionStorage.getItem("home_vehiclePanelOpen") === "true");
+  const [confirmedRide, setConfirmedRide] = useState(() => sessionStorage.getItem("home_confirmedRide") === "true");
+  const [vehicleFound, setVehicleFound] = useState(() => sessionStorage.getItem("home_vehicleFound") === "true");
+  const [waitingForDriver, setWaitingForDriver] = useState(() => sessionStorage.getItem("home_waitingForDriver") === "true");
+  const [fare, setFare] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem("home_fare");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [vehicleType, setVehicleType] = useState(() => sessionStorage.getItem("home_vehicleType") || null);
   const [suggestions, setSuggestions] = useState([]);
   const [activeField, setActiveField] = useState(null);
-  const [ride, setRide] = useState(null);
+  const [ride, setRide] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem("home_ride");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
 
   const navigate = useNavigate();
   const { socket } = useContext(SocketContext);
   const [user] = useContext(UserDataContext);
+
+  useEffect(() => {
+    sessionStorage.setItem("home_pickup", pickup);
+    sessionStorage.setItem("home_destination", destination);
+    sessionStorage.setItem("home_vehiclePanelOpen", vehiclePanelOpen);
+    sessionStorage.setItem("home_confirmedRide", confirmedRide);
+    sessionStorage.setItem("home_vehicleFound", vehicleFound);
+    sessionStorage.setItem("home_waitingForDriver", waitingForDriver);
+    sessionStorage.setItem("home_fare", JSON.stringify(fare));
+    if (vehicleType) sessionStorage.setItem("home_vehicleType", vehicleType);
+    if (ride) sessionStorage.setItem("home_ride", JSON.stringify(ride));
+  }, [pickup, destination, vehiclePanelOpen, confirmedRide, vehicleFound, waitingForDriver, fare, vehicleType, ride]);
 
   useEffect(() => {
     if (user && user._id) {
@@ -67,6 +93,11 @@ const Home = () => {
       setVehiclePanelOpen(false);
       setPanelOpen(false);
       setRide(null);
+      sessionStorage.removeItem("home_vehiclePanelOpen");
+      sessionStorage.removeItem("home_confirmedRide");
+      sessionStorage.removeItem("home_vehicleFound");
+      sessionStorage.removeItem("home_waitingForDriver");
+      sessionStorage.removeItem("home_ride");
     });
 
     return () => {

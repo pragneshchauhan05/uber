@@ -43,7 +43,7 @@ module.exports.getAddressCoordinate = async (address) => {
   if (apiKey) {
     try {
       const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`;
-      const response = await axios.get(url, { timeout: 3000 });
+      const response = await axios.get(url, { timeout: 1000 });
       if (response.data.status === "OK" && response.data.results.length > 0) {
         const location = response.data.results[0].geometry.location;
         const coords = { ltd: location.lat, lng: location.lng };
@@ -60,7 +60,7 @@ module.exports.getAddressCoordinate = async (address) => {
     const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&countrycodes=in&limit=1`;
     const nomRes = await axios.get(nomUrl, {
       headers: { "User-Agent": "UberCloneApp/1.0" },
-      timeout: 2000,
+      timeout: 1000,
     });
     if (nomRes.data && nomRes.data.length > 0) {
       const coords = {
@@ -95,7 +95,7 @@ module.exports.getDistanceTime = async (origin, destination) => {
   if (apiKey) {
     try {
       const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(origin)}&destinations=${encodeURIComponent(destination)}&key=${apiKey}`;
-      const response = await axios.get(url, { timeout: 3000 });
+      const response = await axios.get(url, { timeout: 1000 });
       if (
         response.data.status === "OK" &&
         response.data.rows[0]?.elements[0]?.status === "OK"
@@ -111,14 +111,16 @@ module.exports.getDistanceTime = async (origin, destination) => {
         return result;
       }
     } catch (err) {
-      console.warn("Google Distance Matrix API error, using fallback:", err.message);
+      console.warn("Google Distance Matrix API error, using fast fallback:", err.message);
     }
   }
 
-  // Fallback via Haversine calculation
+  // Parallel Fallback via Haversine calculation
   try {
-    const originCoords = await module.exports.getAddressCoordinate(origin);
-    const destCoords = await module.exports.getAddressCoordinate(destination);
+    const [originCoords, destCoords] = await Promise.all([
+      module.exports.getAddressCoordinate(origin),
+      module.exports.getAddressCoordinate(destination),
+    ]);
 
     const distKm = calculateHaversineDistance(
       originCoords.ltd,

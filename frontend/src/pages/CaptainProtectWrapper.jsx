@@ -2,6 +2,7 @@ import axios from "axios";
 import React, { useContext, useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { CaptainDataContext } from "../Context/CaptainContext";
+import { getApiBaseUrl } from "../config";
 
 const CaptainProtectWrapper = ({ children }) => {
   const token = localStorage.getItem("captainToken");
@@ -12,7 +13,7 @@ const CaptainProtectWrapper = ({ children }) => {
   useEffect(() => {
     if (!token) return;
 
-    const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:4000";
+    const baseUrl = getApiBaseUrl();
     axios
       .get(`${baseUrl}/captains/profile`, {
         headers: {

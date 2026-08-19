@@ -2,6 +2,7 @@ import axios from "axios";
 import React, { useContext, useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { UserDataContext } from "../Context/UserContext";
+import { getApiBaseUrl } from "../config";
 
 const UserProtectWrapper = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -12,7 +13,7 @@ const UserProtectWrapper = ({ children }) => {
   useEffect(() => {
     if (!token) return;
 
-    const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:4000";
+    const baseUrl = getApiBaseUrl();
     axios
       .get(`${baseUrl}/users/profile`, {
         headers: {

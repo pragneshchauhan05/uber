@@ -37,6 +37,7 @@ app.use("/users", userRoutes);
 app.use("/captains", captainRoutes);
 app.use("/maps", mapsRoutes);
 app.use("/rides", rideRoutes);
+app.use("/api/rides", rideRoutes);
 app.use("/api/routes", captainRouteRoutes);
 app.use("/routes", captainRouteRoutes);
 

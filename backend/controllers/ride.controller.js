@@ -4,6 +4,7 @@ const mapService = require("../services/maps.service");
 const { sendMasegeToSocketId } = require("../socket");
 const rideModel = require("../models/ride.model");
 const userModel = require("../models/user.model");
+const RideRequest = require("../models/rideRequest.model");
 
 module.exports.createRide = async (req, res) => {
   const errors = validationResult(req);
@@ -188,6 +189,85 @@ module.exports.cancelRide = async (req, res) => {
   } catch (err) {
     console.error("Error cancelling ride:", err);
     return res.status(500).json({ message: err.message });
+  }
+};
+
+module.exports.createRideRequest = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { pickup, drop, requestedDate, requestedTime } = req.body;
+
+  try {
+    let pickupAddress = typeof pickup === "object" ? pickup.address : pickup;
+    let pickupLat = typeof pickup === "object" ? pickup.lat : null;
+    let pickupLng = typeof pickup === "object" ? pickup.lng : null;
+
+    if (!pickupLat || !pickupLng) {
+      const pickupCoords = await mapService.getAddressCoordinate(pickupAddress);
+      pickupLat = pickupCoords.ltd || pickupCoords.lat;
+      pickupLng = pickupCoords.lng;
+    }
+
+    let dropAddress = typeof drop === "object" ? drop.address : drop;
+    let dropLat = typeof drop === "object" ? drop.lat : null;
+    let dropLng = typeof drop === "object" ? drop.lng : null;
+
+    if (!dropLat || !dropLng) {
+      const dropCoords = await mapService.getAddressCoordinate(dropAddress);
+      dropLat = dropCoords.ltd || dropCoords.lat;
+      dropLng = dropCoords.lng;
+    }
+
+    const rideRequest = await RideRequest.create({
+      userId: req.user._id,
+      pickup: {
+        address: pickupAddress,
+        lat: Number(pickupLat),
+        lng: Number(pickupLng),
+      },
+      drop: {
+        address: dropAddress,
+        lat: Number(dropLat),
+        lng: Number(dropLng),
+      },
+      requestedDate,
+      requestedTime,
+      status: "SEARCHING",
+    });
+
+    return res.status(201).json({
+      message: "Ride request created successfully",
+      rideRequest,
+    });
+  } catch (error) {
+    console.error("Error in createRideRequest:", error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports.getMyRides = async (req, res) => {
+  try {
+    const rides = await RideRequest.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    return res.status(200).json(rides);
+  } catch (error) {
+    console.error("Error in getMyRides:", error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports.getRideById = async (req, res) => {
+  try {
+    const ride = await RideRequest.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!ride) {
+      return res.status(404).json({ message: "Ride request not found" });
+    }
+    return res.status(200).json(ride);
+  } catch (error) {
+    console.error("Error in getRideById:", error);
+    return res.status(500).json({ message: error.message });
   }
 };
 

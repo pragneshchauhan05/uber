@@ -40,6 +40,12 @@ const Home = () => {
   const [vehicleType, setVehicleType] = useState(() => sessionStorage.getItem("home_vehicleType") || null);
   const [suggestions, setSuggestions] = useState([]);
   const [activeField, setActiveField] = useState(null);
+  const [requestedDate, setRequestedDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [requestedTime, setRequestedTime] = useState(() => new Date().toTimeString().slice(0, 5));
+  const [pickupCoords, setPickupCoords] = useState(null);
+  const [dropCoords, setDropCoords] = useState(null);
+  const [isSubmittingRideRequest, setIsSubmittingRideRequest] = useState(false);
+  const [rideRequestMessage, setRideRequestMessage] = useState("");
   const [ride, setRide] = useState(() => {
     try {
       const saved = sessionStorage.getItem("home_ride");
@@ -176,6 +182,85 @@ const Home = () => {
       socket.off("ride-cancelled");
     };
   }, [socket, navigate]);
+
+  const geocodeAddress = async (address) => {
+    if (!address || address.trim().length < 3) return null;
+    try {
+      const res = await axios.get(`${getApiBaseUrl()}/maps/get-coordinates`, {
+        params: { address },
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      if (res.data) {
+        const lat = res.data.ltd || res.data.lat;
+        const lng = res.data.lng;
+        if (lat && lng) return { lat: Number(lat), lng: Number(lng) };
+      }
+    } catch (err) {
+      console.error("Error geocoding address:", err);
+    }
+    return null;
+  };
+
+  const handleFindRides = async (e) => {
+    if (e) e.preventDefault();
+    if (!pickup.trim() || !destination.trim()) {
+      alert("Please enter pickup and drop locations");
+      return;
+    }
+
+    setIsSubmittingRideRequest(true);
+    setRideRequestMessage("");
+
+    let pCoords = pickupCoords;
+    if (!pCoords) {
+      pCoords = await geocodeAddress(pickup);
+      if (pCoords) setPickupCoords(pCoords);
+    }
+
+    let dCoords = dropCoords;
+    if (!dCoords) {
+      dCoords = await geocodeAddress(destination);
+      if (dCoords) setDropCoords(dCoords);
+    }
+
+    try {
+      const response = await axios.post(
+        `${getApiBaseUrl()}/api/rides`,
+        {
+          pickup: {
+            address: pickup,
+            lat: pCoords?.lat || 21.1702,
+            lng: pCoords?.lng || 72.8311,
+          },
+          drop: {
+            address: destination,
+            lat: dCoords?.lat || 21.1802,
+            lng: dCoords?.lng || 72.8411,
+          },
+          requestedDate,
+          requestedTime,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        },
+      );
+
+      if (response.status === 201) {
+        setRideRequestMessage("Ride Request Created! Status: SEARCHING");
+        setTimeout(() => setRideRequestMessage(""), 4000);
+        findTrip();
+      }
+    } catch (error) {
+      console.error("Error submitting ride request:", error);
+      alert(error.response?.data?.message || "Failed to submit ride request");
+    } finally {
+      setIsSubmittingRideRequest(false);
+    }
+  };
 
   const findTrip = async () => {
     if (!pickup.trim() || !destination.trim()) {
@@ -398,12 +483,12 @@ const Home = () => {
 
         {/* Live Map Background */}
         <div className="h-full w-full">
-          <LiveTraking />
+          <LiveTraking pickupCoords={pickupCoords} dropCoords={dropCoords} />
         </div>
 
         {/* Bottom Booking Interface */}
         <div className="flex flex-col justify-end h-full absolute inset-0 z-10 pointer-events-none">
-          <div className="bg-white p-6 rounded-t-3xl shadow-2xl relative pointer-events-auto border-t border-gray-100">
+          <div className="bg-white p-5 sm:p-6 rounded-t-3xl shadow-2xl relative pointer-events-auto border-t border-gray-100 max-h-[85vh] overflow-y-auto">
             <h5
               onClick={() => {
                 setPanelOpen(false);
@@ -413,94 +498,140 @@ const Home = () => {
             >
               <i className="ri-arrow-down-wide-line"></i>
             </h5>
-            <h4 className="text-xl font-extrabold text-gray-900 tracking-tight mb-4">
+            <h4 className="text-xl font-extrabold text-gray-900 tracking-tight mb-3">
               Find a Trip
             </h4>
 
-            <form onSubmit={submitHandler} className="relative space-y-3">
-              {/* Connecting Line Indicator */}
-              <div className="absolute left-4 top-4 bottom-4 w-0.5 bg-gray-300 flex flex-col justify-between items-center py-2 z-10">
-                <div className="w-2.5 h-2.5 bg-black rounded-full"></div>
-                <div className="w-2.5 h-2.5 bg-emerald-600 rounded-sm"></div>
-              </div>
+            <form onSubmit={handleFindRides} className="relative space-y-3">
+              {rideRequestMessage && (
+                <div className="bg-emerald-50 text-emerald-700 text-xs font-bold p-2.5 rounded-xl border border-emerald-200 text-center animate-fade-in">
+                  {rideRequestMessage}
+                </div>
+              )}
 
-              <div className="relative flex items-center">
-                <input
-                  className="w-full bg-gray-100/90 border border-gray-200 pl-11 pr-10 py-3 text-sm font-semibold rounded-2xl text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none transition-all duration-200"
-                  type="text"
-                  placeholder="Add a pick-up location"
-                  value={pickup}
-                  onClick={() => {
-                    setPanelOpen(true);
-                    setActiveField("pickup");
-                  }}
-                  onChange={handlePickupChange}
-                />
-                <button
-                  type="button"
-                  title="Use Current Location"
-                  onClick={() => {
-                    if (navigator.geolocation) {
-                      setPickup("Locating current position...");
-                      navigator.geolocation.getCurrentPosition(
-                        async (position) => {
-                          const { latitude, longitude } = position.coords;
-                          try {
-                            const response = await fetch(
-                              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
-                            );
-                            const data = await response.json();
-                            if (data && data.display_name) {
-                              setPickup(data.display_name);
-                            } else {
+              {/* Pickup Field */}
+              <div>
+                <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-1">
+                  Pickup
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    className="w-full bg-gray-100/90 border border-gray-200 pl-10 pr-10 py-2.5 text-sm font-semibold rounded-2xl text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none transition-all duration-200"
+                    type="text"
+                    placeholder="Select location"
+                    value={pickup}
+                    onClick={() => {
+                      setPanelOpen(true);
+                      setActiveField("pickup");
+                    }}
+                    onChange={handlePickupChange}
+                    required
+                  />
+                  <button
+                    type="button"
+                    title="Use Current Location"
+                    onClick={() => {
+                      if (navigator.geolocation) {
+                        setPickup("Locating current position...");
+                        navigator.geolocation.getCurrentPosition(
+                          async (position) => {
+                            const { latitude, longitude } = position.coords;
+                            setPickupCoords({ lat: latitude, lng: longitude });
+                            try {
+                              const response = await fetch(
+                                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+                              );
+                              const data = await response.json();
+                              if (data && data.display_name) {
+                                setPickup(data.display_name);
+                              } else {
+                                setPickup(
+                                  `Current Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+                                );
+                              }
+                            } catch (err) {
                               setPickup(
                                 `Current Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
                               );
                             }
-                          } catch (err) {
-                            console.error("Reverse geocoding error:", err);
-                            setPickup(
-                              `Current Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
-                            );
-                          }
-                        },
-                        (error) => {
-                          console.error("Geolocation error:", error);
-                          setPickup("Current Location");
-                        },
-                      );
-                    } else {
-                      setPickup("Current Location");
-                    }
-                  }}
-                  className="absolute right-3 text-gray-500 hover:text-black p-1 transition-colors cursor-pointer"
-                >
-                  <i className="ri-navigation-fill text-blue-600 text-lg"></i>
-                </button>
+                          },
+                          () => setPickup("Current Location"),
+                        );
+                      } else {
+                        setPickup("Current Location");
+                      }
+                    }}
+                    className="absolute right-3 text-gray-500 hover:text-black p-1 transition-colors cursor-pointer"
+                  >
+                    <i className="ri-navigation-fill text-blue-600 text-lg"></i>
+                  </button>
+                </div>
               </div>
 
-              <div className="relative">
-                <input
-                  className="w-full bg-gray-100/90 border border-gray-200 pl-11 pr-4 py-3 text-sm font-semibold rounded-2xl text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none transition-all duration-200"
-                  type="text"
-                  placeholder="Enter your destination"
-                  value={destination}
-                  onClick={() => {
-                    setPanelOpen(true);
-                    setActiveField("destination");
-                  }}
-                  onChange={handleDestinationChange}
-                />
+              {/* Drop Field */}
+              <div>
+                <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-1">
+                  Drop
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    className="w-full bg-gray-100/90 border border-gray-200 pl-10 pr-4 py-2.5 text-sm font-semibold rounded-2xl text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-black focus:ring-2 focus:ring-black/10 focus:outline-none transition-all duration-200"
+                    type="text"
+                    placeholder="Select location"
+                    value={destination}
+                    onClick={() => {
+                      setPanelOpen(true);
+                      setActiveField("destination");
+                    }}
+                    onChange={handleDestinationChange}
+                    required
+                  />
+                </div>
               </div>
+
+              {/* Date & Time Fields */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-1">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full bg-gray-100/90 border border-gray-200 px-3 py-2 text-xs font-semibold rounded-2xl text-gray-900 focus:bg-white focus:border-black focus:outline-none transition-all duration-200"
+                    value={requestedDate}
+                    onChange={(e) => setRequestedDate(e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-1">
+                    Time
+                  </label>
+                  <input
+                    type="time"
+                    className="w-full bg-gray-100/90 border border-gray-200 px-3 py-2 text-xs font-semibold rounded-2xl text-gray-900 focus:bg-white focus:border-black focus:outline-none transition-all duration-200"
+                    value={requestedTime}
+                    onChange={(e) => setRequestedTime(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmittingRideRequest}
+                className="w-full bg-black hover:bg-gray-800 active:scale-[0.99] transition-all duration-200 text-white py-3.5 rounded-2xl mt-3 font-bold text-base shadow-xl shadow-black/10 flex justify-center items-center cursor-pointer disabled:opacity-60"
+              >
+                {isSubmittingRideRequest ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    Find Rides
+                    <i className="ri-arrow-right-line ml-2 text-lg"></i>
+                  </>
+                )}
+              </button>
             </form>
-
-            <button
-              onClick={findTrip}
-              className="w-full bg-black hover:bg-gray-800 active:scale-[0.99] transition-all duration-200 text-white py-3.5 rounded-2xl mt-4 font-bold text-base shadow-xl shadow-black/10 flex justify-center items-center cursor-pointer"
-            >
-              Search Rides
-              <i className="ri-arrow-right-line ml-2 text-lg"></i>
-            </button>
           </div>
 
           <div

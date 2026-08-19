@@ -60,6 +60,29 @@ router.post(
   rideController.cancelRide,
 );
 
+// Phase 2: User Ride Request endpoints
+router.post(
+  "/",
+  authMiddleware.authUser,
+  body("pickup").notEmpty().withMessage("pickup is required"),
+  body("drop").notEmpty().withMessage("drop is required"),
+  body("requestedDate").isString().notEmpty().withMessage("requestedDate is required"),
+  body("requestedTime").isString().notEmpty().withMessage("requestedTime is required"),
+  rideController.createRideRequest
+);
+
+router.get(
+  "/my-rides",
+  authMiddleware.authUser,
+  rideController.getMyRides
+);
+
+router.get(
+  "/:id",
+  authMiddleware.authUser,
+  rideController.getRideById
+);
+
 module.exports = router;
 
 

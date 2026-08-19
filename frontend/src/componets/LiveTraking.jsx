@@ -11,10 +11,12 @@ const defaultCenter = {
   lng: 72.8311,
 };
 
-const LeafletMap = ({ currentPosition }) => {
+const LeafletMap = ({ currentPosition, pickupCoords, dropCoords }) => {
   const mapContainerRef = useRef(null);
   const leafletMapRef = useRef(null);
-  const markerRef = useRef(null);
+  const pickupMarkerRef = useRef(null);
+  const dropMarkerRef = useRef(null);
+  const currentMarkerRef = useRef(null);
   const [isLeafletLoaded, setIsLeafletLoaded] = useState(Boolean(window.L));
 
   useEffect(() => {
@@ -40,18 +42,28 @@ const LeafletMap = ({ currentPosition }) => {
   useEffect(() => {
     if (!isLeafletLoaded || !mapContainerRef.current || !window.L) return;
 
+    const centerLat = pickupCoords?.lat || currentPosition.lat;
+    const centerLng = pickupCoords?.lng || currentPosition.lng;
+
     if (!leafletMapRef.current) {
       const map = window.L.map(mapContainerRef.current, {
         zoomControl: false,
-      }).setView([currentPosition.lat, currentPosition.lng], 15);
+      }).setView([centerLat, centerLng], 14);
 
       window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; OpenStreetMap',
+        attribution: "&copy; OpenStreetMap",
         maxZoom: 19,
       }).addTo(map);
 
       window.L.control.zoom({ position: "bottomright" }).addTo(map);
 
+      leafletMapRef.current = map;
+    }
+
+    const map = leafletMapRef.current;
+
+    // Current position marker
+    if (!pickupCoords && !dropCoords) {
       const customIcon = window.L.divIcon({
         className: "custom-leaflet-marker",
         html: `<div style="background-color: #000; width: 18px; height: 18px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 10px rgba(0,0,0,0.5);"></div>`,
@@ -59,24 +71,72 @@ const LeafletMap = ({ currentPosition }) => {
         iconAnchor: [9, 9],
       });
 
-      const marker = window.L.marker([currentPosition.lat, currentPosition.lng], { icon: customIcon }).addTo(map);
-
-      leafletMapRef.current = map;
-      markerRef.current = marker;
-    } else {
-      leafletMapRef.current.setView([currentPosition.lat, currentPosition.lng]);
-      if (markerRef.current) {
-        markerRef.current.setLatLng([currentPosition.lat, currentPosition.lng]);
+      if (!currentMarkerRef.current) {
+        currentMarkerRef.current = window.L.marker([currentPosition.lat, currentPosition.lng], { icon: customIcon }).addTo(map);
+      } else {
+        currentMarkerRef.current.setLatLng([currentPosition.lat, currentPosition.lng]);
       }
+    } else if (currentMarkerRef.current) {
+      map.removeLayer(currentMarkerRef.current);
+      currentMarkerRef.current = null;
     }
-  }, [isLeafletLoaded, currentPosition]);
+
+    // Pickup Marker
+    if (pickupCoords?.lat && pickupCoords?.lng) {
+      const pickupIcon = window.L.divIcon({
+        className: "leaflet-pickup-marker",
+        html: `<div style="background-color: #000; color: #fff; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); display: flex; items-center; gap: 4px;">📍 Pickup</div>`,
+        iconSize: [60, 24],
+        iconAnchor: [30, 24],
+      });
+
+      if (!pickupMarkerRef.current) {
+        pickupMarkerRef.current = window.L.marker([pickupCoords.lat, pickupCoords.lng], { icon: pickupIcon }).addTo(map);
+      } else {
+        pickupMarkerRef.current.setLatLng([pickupCoords.lat, pickupCoords.lng]);
+      }
+    } else if (pickupMarkerRef.current) {
+      map.removeLayer(pickupMarkerRef.current);
+      pickupMarkerRef.current = null;
+    }
+
+    // Drop Marker
+    if (dropCoords?.lat && dropCoords?.lng) {
+      const dropIcon = window.L.divIcon({
+        className: "leaflet-drop-marker",
+        html: `<div style="background-color: #059669; color: #fff; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); display: flex; items-center; gap: 4px;">🏁 Drop</div>`,
+        iconSize: [60, 24],
+        iconAnchor: [30, 24],
+      });
+
+      if (!dropMarkerRef.current) {
+        dropMarkerRef.current = window.L.marker([dropCoords.lat, dropCoords.lng], { icon: dropIcon }).addTo(map);
+      } else {
+        dropMarkerRef.current.setLatLng([dropCoords.lat, dropCoords.lng]);
+      }
+    } else if (dropMarkerRef.current) {
+      map.removeLayer(dropMarkerRef.current);
+      dropMarkerRef.current = null;
+    }
+
+    // Fit bounds if both pickup & drop exist
+    if (pickupCoords?.lat && dropCoords?.lat) {
+      const bounds = window.L.latLngBounds(
+        [pickupCoords.lat, pickupCoords.lng],
+        [dropCoords.lat, dropCoords.lng]
+      );
+      map.fitBounds(bounds, { padding: [50, 50] });
+    } else if (pickupCoords?.lat) {
+      map.setView([pickupCoords.lat, pickupCoords.lng], 15);
+    }
+  }, [isLeafletLoaded, currentPosition, pickupCoords, dropCoords]);
 
   return <div ref={mapContainerRef} className="w-full h-full z-0 relative" />;
 };
 
-const LiveTraking = () => {
+const LiveTraking = ({ pickupCoords, dropCoords }) => {
   const [currentPosition, setCurrentPosition] = useState(defaultCenter);
-  const [, setMap] = useState(null);
+  const [map, setMap] = useState(null);
   const [mapError, setMapError] = useState(false);
 
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
@@ -101,7 +161,7 @@ const LiveTraking = () => {
           setCurrentPosition({ lat: latitude, lng: longitude });
         },
         () => {},
-        { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 },
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
       );
 
       const watchId = navigator.geolocation.watchPosition(
@@ -110,7 +170,7 @@ const LiveTraking = () => {
           setCurrentPosition({ lat: latitude, lng: longitude });
         },
         () => {},
-        { enableHighAccuracy: false, timeout: 10000, maximumAge: 30000 },
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 30000 }
       );
 
       return () => navigator.geolocation.clearWatch(watchId);
@@ -125,8 +185,29 @@ const LiveTraking = () => {
     setMap(null);
   }, []);
 
+  // Fit bounds when Google Maps is loaded and coordinates change
+  useEffect(() => {
+    if (map && window.google) {
+      if (pickupCoords?.lat && dropCoords?.lat) {
+        const bounds = new window.google.maps.LatLngBounds();
+        bounds.extend(pickupCoords);
+        bounds.extend(dropCoords);
+        map.fitBounds(bounds);
+      } else if (pickupCoords?.lat) {
+        map.panTo(pickupCoords);
+        map.setZoom(15);
+      }
+    }
+  }, [map, pickupCoords, dropCoords]);
+
   if (loadError || mapError || !apiKey) {
-    return <LeafletMap currentPosition={currentPosition} />;
+    return (
+      <LeafletMap
+        currentPosition={currentPosition}
+        pickupCoords={pickupCoords}
+        dropCoords={dropCoords}
+      />
+    );
   }
 
   if (!isLoaded) {
@@ -140,11 +221,13 @@ const LiveTraking = () => {
     );
   }
 
+  const mapCenter = pickupCoords?.lat ? pickupCoords : currentPosition;
+
   return (
     <GoogleMap
       mapContainerStyle={containerStyle}
-      center={currentPosition}
-      zoom={15}
+      center={mapCenter}
+      zoom={14}
       onLoad={onLoad}
       onUnmount={onUnmount}
       options={{
@@ -152,7 +235,23 @@ const LiveTraking = () => {
         zoomControl: true,
       }}
     >
-      <Marker position={currentPosition} />
+      {!pickupCoords && !dropCoords && <Marker position={currentPosition} />}
+
+      {pickupCoords?.lat && pickupCoords?.lng && (
+        <Marker
+          position={pickupCoords}
+          title="Pickup Location"
+          label={{ text: "P", color: "#ffffff", fontWeight: "bold" }}
+        />
+      )}
+
+      {dropCoords?.lat && dropCoords?.lng && (
+        <Marker
+          position={dropCoords}
+          title="Drop Location"
+          label={{ text: "D", color: "#ffffff", fontWeight: "bold" }}
+        />
+      )}
     </GoogleMap>
   );
 };

@@ -59,8 +59,7 @@ const VehiclePanel = (props) => {
             </span>
           </div>
           <h5 className="font-semibold text-xs text-emerald-600 mt-0.5">
-            {get12HourTime(props.fare?.durationMinutes?.car || 2)} •{" "}
-            {props.fare?.durationTimes?.car || "2 min away"}
+            {get12HourTime(props.fare?.durationMinutes?.car || 2)}
           </h5>
           <p className="text-xs text-gray-500 mt-0.5">
             Affordable, comfortable rides
@@ -91,8 +90,7 @@ const VehiclePanel = (props) => {
             </span>
           </div>
           <h5 className="font-semibold text-xs text-emerald-600 mt-0.5">
-            {get12HourTime(props.fare?.durationMinutes?.motorcycle || 3)} •{" "}
-            {props.fare?.durationTimes?.motorcycle || "3 min away"}
+            {get12HourTime(props.fare?.durationMinutes?.motorcycle || 3)}
           </h5>
           <p className="text-xs text-gray-500 mt-0.5">Quick motorcycle rides</p>
         </div>
@@ -121,8 +119,7 @@ const VehiclePanel = (props) => {
             </span>
           </div>
           <h5 className="font-semibold text-xs text-emerald-600 mt-0.5">
-            {get12HourTime(props.fare?.durationMinutes?.auto || 5)} •{" "}
-            {props.fare?.durationTimes?.auto || "5 min away"}
+            {get12HourTime(props.fare?.durationMinutes?.auto || 5)}
           </h5>
           <p className="text-xs text-gray-500 mt-0.5">
             No bargaining, auto rides

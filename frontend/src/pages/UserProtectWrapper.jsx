@@ -7,7 +7,8 @@ import { getApiBaseUrl } from "../config";
 const UserProtectWrapper = ({ children }) => {
   const token = localStorage.getItem("token");
   const [user, setUser] = useContext(UserDataContext);
-  const [isLoading, setIsLoading] = useState(true);
+  const isUserLoaded = Boolean(user && (user._id || (user.email && user.email.length > 0)));
+  const [isLoading, setIsLoading] = useState(!isUserLoaded);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,15 +21,18 @@ const UserProtectWrapper = ({ children }) => {
           Authorization: `Bearer ${token}`,
         },
       })
-
       .then((res) => {
-        setUser(res.data.user);
+        if (res.data?.user) {
+          setUser(res.data.user);
+        }
         setIsLoading(false);
       })
       .catch((err) => {
         console.error(err);
-        localStorage.removeItem("token");
-        navigate("/login");
+        if (!isUserLoaded) {
+          localStorage.removeItem("token");
+          navigate("/login");
+        }
         setIsLoading(false);
       });
   }, [token]);

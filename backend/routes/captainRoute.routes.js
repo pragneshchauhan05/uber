@@ -27,6 +27,18 @@ router.get("/all", captainRouteController.getAllActiveRoutes);
 // POST /api/routes/book - Book a seat on a captain's route
 router.post("/book", authUser, captainRouteController.bookCaptainRoute);
 
+// GET /api/routes/matches/:rideId - Find Captain routes matching a User ride request
+router.get("/matches/:rideId", captainRouteController.getMatchingRoutes);
+
+// GET /api/captain/routes/:routeId/matches - Captain views matching User ride requests
+router.get("/:routeId/matches", authCaptain, captainRouteController.getCaptainRouteMatches);
+
+// POST /api/routes/accept-ride - Captain accepts a matching User ride request
+router.post("/accept-ride", authCaptain, captainRouteController.acceptRideRequest);
+
+// POST /api/routes/reject-ride - Captain rejects a matching User ride request
+router.post("/reject-ride", authCaptain, captainRouteController.rejectRideRequest);
+
 // DELETE /api/routes/:id - Delete a published route
 router.delete("/:id", authCaptain, captainRouteController.deleteRoute);
 

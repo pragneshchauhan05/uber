@@ -32,8 +32,19 @@ const captainRouteSchema = new mongoose.Schema(
       enum: ["ACTIVE", "COMPLETED", "CANCELLED"],
       default: "ACTIVE",
     },
+    startLocationPoint: {
+      type: { type: String, enum: ["Point"], default: "Point" },
+      coordinates: { type: [Number], default: [0, 0] },
+    },
+    destinationPoint: {
+      type: { type: String, enum: ["Point"], default: "Point" },
+      coordinates: { type: [Number], default: [0, 0] },
+    },
   },
   { timestamps: true }
 );
+
+captainRouteSchema.index({ startLocationPoint: "2dsphere" });
+captainRouteSchema.index({ destinationPoint: "2dsphere" });
 
 module.exports = mongoose.model("captainRoute", captainRouteSchema);

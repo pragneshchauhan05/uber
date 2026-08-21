@@ -5,6 +5,8 @@ const { sendMasegeToSocketId } = require("../socket");
 const rideModel = require("../models/ride.model");
 const userModel = require("../models/user.model");
 const RideRequest = require("../models/rideRequest.model");
+const captainRouteModel = require("../models/captainRoute.model");
+const routeMatchingService = require("../services/routeMatching.service");
 
 module.exports.createRide = async (req, res) => {
   const errors = validationResult(req);
@@ -233,10 +235,66 @@ module.exports.createRideRequest = async (req, res) => {
         lat: Number(dropLat),
         lng: Number(dropLng),
       },
+      pickupPoint: {
+        type: "Point",
+        coordinates: [Number(pickupLng), Number(pickupLat)],
+      },
+      dropPoint: {
+        type: "Point",
+        coordinates: [Number(dropLng), Number(dropLat)],
+      },
       requestedDate,
       requestedTime,
       status: "SEARCHING",
     });
+
+    // Find active captain routes that match this ride request and notify matching captains in real time
+    try {
+      const activeRoutes = await captainRouteModel
+        .find({ status: "ACTIVE" })
+        .populate("captain", "fullname fullName vehicle rating phone socketId");
+
+      const matches = routeMatchingService.findMatchingRoutesForRide(rideRequest, activeRoutes);
+
+      const userName =
+        `${req.user.fullname?.firstname || req.user.fullname?.firstName || "User"} ${
+          req.user.fullname?.lastname || req.user.fullname?.lastName || ""
+        }`.trim() || "User";
+
+      for (const match of matches) {
+        const captainObj = activeRoutes.find(
+          (r) => r._id.toString() === match.routeId.toString()
+        )?.captain;
+
+        if (captainObj && captainObj.socketId) {
+          const notificationData = {
+            rideRequestId: rideRequest._id,
+            routeId: match.routeId,
+            userName,
+            userEmail: req.user.email,
+            pickup: rideRequest.pickup.address,
+            drop: rideRequest.drop.address,
+            matchScore: match.matchScore,
+            pickupDistance: match.pickupDistance,
+            dropDistance: match.dropDistance,
+            requestedDate: rideRequest.requestedDate,
+            requestedTime: rideRequest.requestedTime,
+          };
+
+          sendMasegeToSocketId(captainObj.socketId, {
+            event: "ride:matched",
+            data: notificationData,
+          });
+
+          sendMasegeToSocketId(captainObj.socketId, {
+            event: "ride:requested",
+            data: notificationData,
+          });
+        }
+      }
+    } catch (matchErr) {
+      console.error("Error broadcasting real-time ride match to captains:", matchErr);
+    }
 
     return res.status(201).json({
       message: "Ride request created successfully",

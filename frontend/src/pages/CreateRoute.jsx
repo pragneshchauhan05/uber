@@ -1,8 +1,12 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useJsApiLoader, GoogleMap, Marker, Polyline } from "@react-google-maps/api";
 import { getApiBaseUrl } from "../config";
+import CaptainMatchingRides from "../componets/CaptainMatchingRides";
+import RealtimeNotificationModal from "../componets/RealtimeNotificationModal";
+import { SocketContext } from "../Context/SocketContext";
+import { CaptainDataContext } from "../Context/CaptainContext";
 
 const containerStyle = {
   width: "100%",
@@ -133,15 +137,54 @@ const CreateRoute = () => {
   const [departureTime, setDepartureTime] = useState("09:00 AM");
   const [availableSeats, setAvailableSeats] = useState(3);
   const [myRoutes, setMyRoutes] = useState([]);
+  const [activeMatchingRouteId, setActiveMatchingRouteId] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
   const [activeField, setActiveField] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mapError, setMapError] = useState(false);
   const [alertMsg, setAlertMsg] = useState({ type: "", text: "" });
+  const [realtimeNotification, setRealtimeNotification] = useState(null);
+
+  const { socket, sendMessage } = useContext(SocketContext);
+  const [captain] = useContext(CaptainDataContext);
+
+  useEffect(() => {
+    if (captain && captain._id && socket) {
+      sendMessage("join", { userType: "captain", userId: captain._id });
+    }
+  }, [captain, socket]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleRideMatched = (data) => {
+      console.log("Real-time ride:matched in CreateRoute:", data);
+      setRealtimeNotification({ type: "ride:matched", data });
+      if (data?.routeId) {
+        setActiveMatchingRouteId(data.routeId);
+      }
+    };
+
+    const handleRideRequested = (data) => {
+      console.log("Real-time ride:requested in CreateRoute:", data);
+      setRealtimeNotification({ type: "ride:requested", data });
+      if (data?.routeId) {
+        setActiveMatchingRouteId(data.routeId);
+      }
+    };
+
+    socket.on("ride:matched", handleRideMatched);
+    socket.on("ride:requested", handleRideRequested);
+
+    return () => {
+      socket.off("ride:matched", handleRideMatched);
+      socket.off("ride:requested", handleRideRequested);
+    };
+  }, [socket]);
 
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
   const { isLoaded } = useJsApiLoader({
-    id: "google-route-map-script",
+    id: "google-map-script",
     googleMapsApiKey: apiKey,
   });
 
@@ -150,13 +193,7 @@ const CreateRoute = () => {
       setMapError(true);
     };
     fetchMyRoutes();
-
-    const handlePopState = () => {
-      navigate("/captain-home", { replace: true });
-    };
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, [navigate]);
+  }, []);
 
   const fetchMyRoutes = async () => {
     try {
@@ -316,27 +353,17 @@ const CreateRoute = () => {
   return (
     <div className="min-h-screen bg-gray-900 flex justify-center items-center p-0 md:p-6">
       <div className="w-full max-w-md h-screen md:h-[840px] md:rounded-3xl shadow-2xl overflow-hidden relative flex flex-col bg-white">
-        {/* Top Header */}
-        <div className="p-4 bg-black text-white flex items-center justify-between z-10 shadow-md">
-          <div className="flex items-center gap-3">
-            <Link
-              to="/captain-home"
-              className="w-9 h-9 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all"
-            >
-              <i className="ri-arrow-left-line text-lg text-white"></i>
-            </Link>
-            <div>
-              <h2 className="font-bold text-base tracking-tight">Create Captain Route</h2>
-              <p className="text-[11px] text-gray-400">Phase 1: Publish Planned Route</p>
-            </div>
-          </div>
-          <span className="text-xs font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/30">
-            Captain
-          </span>
-        </div>
+        {/* Floating Back Button */}
+        <Link
+          to="/captain-home"
+          title="Back to Captain Dashboard"
+          className="absolute top-4 left-4 z-20 w-10 h-10 bg-white shadow-lg rounded-full flex items-center justify-center hover:bg-gray-100 transition-all text-black border border-gray-200 cursor-pointer"
+        >
+          <i className="ri-arrow-left-line text-xl"></i>
+        </Link>
 
         {/* Content Scroll Container */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 pt-16 space-y-4">
           {alertMsg.text && (
             <div
               className={`p-3.5 rounded-2xl text-xs font-semibold flex items-center gap-2 ${
@@ -566,12 +593,28 @@ const CreateRoute = () => {
                     <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
                       {rt.status}
                     </span>
-                    <button
-                      onClick={() => handleDeleteRoute(rt._id)}
-                      className="text-xs font-bold text-red-500 hover:text-red-700 flex items-center gap-1 cursor-pointer"
-                    >
-                      <i className="ri-delete-bin-line text-sm"></i> Delete
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() =>
+                          setActiveMatchingRouteId(
+                            activeMatchingRouteId === rt._id ? null : rt._id
+                          )
+                        }
+                        className="text-xs font-bold text-emerald-600 hover:text-emerald-800 flex items-center gap-1 cursor-pointer bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200"
+                      >
+                        <i className="ri-user-shared-line text-sm"></i>
+                        <span>
+                          {activeMatchingRouteId === rt._id ? "Hide Matches" : "Matching Rides"}
+                        </span>
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteRoute(rt._id)}
+                        className="text-xs font-bold text-red-500 hover:text-red-700 flex items-center gap-1 cursor-pointer p-1"
+                      >
+                        <i className="ri-delete-bin-line text-sm"></i> Delete
+                      </button>
+                    </div>
                   </div>
 
                   <div className="text-xs font-medium text-gray-800 space-y-1">
@@ -591,16 +634,35 @@ const CreateRoute = () => {
                         <i className="ri-time-line"></i> {rt.departureTime}
                       </span>
                       <span>
-                        <i className="ri-user-3-line"></i> {rt.availableSeats} Seats
+                        <i className="ri-user-3-line"></i> {rt.availableSeats - (rt.seatsBooked || 0)} Seats Left
                       </span>
                     </div>
                   </div>
+
+                  {activeMatchingRouteId === rt._id && (
+                    <div className="pt-2">
+                      <CaptainMatchingRides
+                        routeId={rt._id}
+                        routeInfo={rt}
+                        onClose={() => setActiveMatchingRouteId(null)}
+                        onActionSuccess={() => fetchMyRoutes()}
+                      />
+                    </div>
+                  )}
                 </div>
               ))
             )}
           </div>
         </div>
       </div>
+      {/* Real-time Socket Notification Modal */}
+      <RealtimeNotificationModal
+        notification={realtimeNotification}
+        onClose={() => setRealtimeNotification(null)}
+        onViewRide={(data) => {
+          if (data?.routeId) setActiveMatchingRouteId(data.routeId);
+        }}
+      />
     </div>
   );
 };

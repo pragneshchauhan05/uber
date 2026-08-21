@@ -10,6 +10,7 @@ import LookingForDriver from "../componets/LookingForDriver";
 import WaitingForDriver from "../componets/WaitingForDriver";
 import LiveTraking from "../componets/LiveTraking";
 import CaptainRouteList from "../componets/CaptainRouteList";
+import RealtimeNotificationModal from "../componets/RealtimeNotificationModal";
 import { useEffect, useContext } from "react";
 import { SocketContext } from "../Context/SocketContext";
 import { UserDataContext } from "../Context/UserContext";
@@ -82,8 +83,46 @@ const Home = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { socket } = useContext(SocketContext);
+  const { socket, sendMessage } = useContext(SocketContext);
   const [user] = useContext(UserDataContext);
+  const [realtimeNotification, setRealtimeNotification] = useState(null);
+
+  useEffect(() => {
+    if (user && user._id && socket) {
+      sendMessage("join", { userType: "user", userId: user._id });
+    }
+  }, [user, socket]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleRideConfirmed = (data) => {
+      console.log("Real-time ride:confirmed notification received:", data);
+      setRealtimeNotification({ type: "ride:confirmed", data });
+      setActiveTab("captain-routes");
+    };
+
+    const handleRideAccepted = (data) => {
+      console.log("Real-time ride:accepted notification received:", data);
+      setRealtimeNotification({ type: "ride:accepted", data });
+      setActiveTab("captain-routes");
+    };
+
+    const handleRideRejected = (data) => {
+      console.log("Real-time ride:rejected notification received:", data);
+      setRealtimeNotification({ type: "ride:rejected", data });
+    };
+
+    socket.on("ride:confirmed", handleRideConfirmed);
+    socket.on("ride:accepted", handleRideAccepted);
+    socket.on("ride:rejected", handleRideRejected);
+
+    return () => {
+      socket.off("ride:confirmed", handleRideConfirmed);
+      socket.off("ride:accepted", handleRideAccepted);
+      socket.off("ride:rejected", handleRideRejected);
+    };
+  }, [socket]);
 
   const resetAllPanels = () => {
     setWaitingForDriver(false);
@@ -116,26 +155,25 @@ const Home = () => {
   }, [location.state]);
 
   useEffect(() => {
+    if (!panelOpen && !vehiclePanelOpen && !confirmedRide && !vehicleFound && !waitingForDriver) {
+      return;
+    }
+
     const handlePopState = () => {
       if (waitingForDriver) {
         setWaitingForDriver(false);
         setVehicleFound(true);
-        window.history.pushState(null, "", window.location.href);
       } else if (vehicleFound) {
         setVehicleFound(false);
         setConfirmedRide(true);
-        window.history.pushState(null, "", window.location.href);
       } else if (confirmedRide) {
         setConfirmedRide(false);
         setVehiclePanelOpen(true);
-        window.history.pushState(null, "", window.location.href);
       } else if (vehiclePanelOpen) {
         setVehiclePanelOpen(false);
         setPanelOpen(true);
-        window.history.pushState(null, "", window.location.href);
       } else if (panelOpen) {
         setPanelOpen(false);
-        window.history.pushState(null, "", window.location.href);
       }
     };
 
@@ -228,6 +266,8 @@ const Home = () => {
     return null;
   };
 
+  const [activeRideRequestId, setActiveRideRequestId] = useState(null);
+
   const handleFindRides = async (e) => {
     if (e) e.preventDefault();
     if (!pickup.trim() || !destination.trim()) {
@@ -274,10 +314,12 @@ const Home = () => {
         },
       );
 
-      if (response.status === 201) {
+      if (response.status === 201 && response.data?.rideRequest?._id) {
+        const createdId = response.data.rideRequest._id;
+        setActiveRideRequestId(createdId);
         setRideRequestMessage("Ride Request Created! Status: SEARCHING");
         setTimeout(() => setRideRequestMessage(""), 4000);
-        findTrip();
+        setActiveTab("captain-routes");
       }
     } catch (error) {
       console.error("Error submitting ride request:", error);
@@ -638,8 +680,8 @@ const Home = () => {
                   </div>
                 </form>
 
-                {panelOpen ? (
-                  <div className="flex-1 overflow-y-auto mt-4 pt-2 border-t border-gray-100">
+                {panelOpen && (
+                  <div className="flex-1 overflow-y-auto mt-4 pt-2 border-t border-gray-100 min-h-[140px]">
                     <LocationSearchPanel
                       suggestions={suggestions}
                       setPickup={setPickup}
@@ -649,18 +691,39 @@ const Home = () => {
                       setVehiclePanelOpen={setVehiclePanelOpen}
                     />
                   </div>
-                ) : (
+                )}
+
+                <div className="space-y-2.5 mt-4 shrink-0 pt-2 border-t border-gray-100">
                   <button
                     onClick={findTrip}
-                    className="w-full bg-black hover:bg-gray-800 active:scale-[0.99] transition-all duration-200 text-white py-3.5 rounded-2xl mt-4 font-bold text-base shadow-xl shadow-black/10 flex justify-center items-center cursor-pointer shrink-0"
+                    className="w-full bg-black hover:bg-gray-800 active:scale-[0.99] transition-all duration-200 text-white py-3.5 rounded-2xl font-bold text-base shadow-xl shadow-black/10 flex justify-center items-center cursor-pointer"
                   >
-                    Search Rides
-                    <i className="ri-arrow-right-line ml-2 text-lg"></i>
+                    <i className="ri-flashlight-line mr-2 text-amber-400 text-lg"></i>
+                    Find Instant Ride
                   </button>
-                )}
+
+                  <button
+                    onClick={handleFindRides}
+                    disabled={isSubmittingRideRequest}
+                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 active:scale-[0.99] transition-all duration-200 py-2.5 rounded-xl font-bold text-xs flex justify-center items-center cursor-pointer disabled:opacity-50 border border-gray-200"
+                  >
+                    {isSubmittingRideRequest ? (
+                      <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <>
+                        <i className="ri-map-pin-user-line mr-1 text-emerald-600 text-sm"></i>
+                        Find Matching Captain Routes
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             ) : (
-              <CaptainRouteList onSelectCaptainRoute={handleSelectCaptainRoute} />
+              <CaptainRouteList
+                rideId={activeRideRequestId}
+                onSelectCaptainRoute={handleSelectCaptainRoute}
+                onClose={() => setActiveRideRequestId(null)}
+              />
             )}
           </div>
         </div>
@@ -716,6 +779,13 @@ const Home = () => {
             waitingForDriver={waitingForDriver}
           />
         </div>
+
+        {/* Real-time Socket Notification Modal */}
+        <RealtimeNotificationModal
+          notification={realtimeNotification}
+          onClose={() => setRealtimeNotification(null)}
+          onViewRide={() => setActiveTab("captain-routes")}
+        />
       </div>
     </div>
   );

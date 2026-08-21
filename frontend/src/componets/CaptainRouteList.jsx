@@ -1,11 +1,22 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { getApiBaseUrl } from "../config";
+import MatchingCaptainsPanel from "./MatchingCaptainsPanel";
 
-const CaptainRouteList = ({ onSelectCaptainRoute }) => {
+const CaptainRouteList = ({ onSelectCaptainRoute, rideId, onClose }) => {
   const [routes, setRoutes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+
+  if (rideId) {
+    return (
+      <MatchingCaptainsPanel
+        rideId={rideId}
+        onSelectCaptainRoute={onSelectCaptainRoute}
+        onClose={onClose}
+      />
+    );
+  }
 
   const fetchActiveRoutes = async () => {
     setIsLoading(true);
@@ -16,8 +27,8 @@ const CaptainRouteList = ({ onSelectCaptainRoute }) => {
         setRoutes(response.data.routes);
       }
     } catch (err) {
-      console.error("Error fetching active captain routes:", err);
-      setError("Unable to load active Captain routes.");
+      console.error("Error fetching captain routes:", err);
+      setError("Unable to load Captain routes.");
     } finally {
       setIsLoading(false);
     }
@@ -25,7 +36,7 @@ const CaptainRouteList = ({ onSelectCaptainRoute }) => {
 
   useEffect(() => {
     fetchActiveRoutes();
-  }, []);
+  }, [rideId]);
 
   if (isLoading) {
     return (
@@ -80,21 +91,29 @@ const CaptainRouteList = ({ onSelectCaptainRoute }) => {
         const captain = routeItem.captain || {};
         const firstName = captain.fullname?.firstname || captain.fullName?.firstName || "Captain";
         const lastName = captain.fullname?.lastname || captain.fullName?.lastName || "";
-        const captainName = `${firstName} ${lastName}`.trim();
-
+        const captainName = routeItem.captainName || `${firstName} ${lastName}`.trim();
         const vehiclePlate = captain.vehicle?.plate || "GJ01AB1234";
         const vehicleColor = captain.vehicle?.color || "";
         const vehicleType = captain.vehicle?.vehicleType || "Car";
         const rating = captain.rating || "4.9";
-        const seatsLeft = (routeItem.availableSeats || 1) - (routeItem.seatsBooked || 0);
+        const seatsLeft = routeItem.availableSeats !== undefined
+          ? routeItem.availableSeats
+          : (routeItem.availableSeats || 1) - (routeItem.seatsBooked || 0);
 
         return (
           <div
-            key={routeItem._id}
-            className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm hover:shadow-md hover:border-black transition-all cursor-pointer"
+            key={routeItem.routeId || routeItem._id}
+            className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm hover:shadow-md hover:border-black transition-all cursor-pointer relative overflow-hidden"
           >
+            {routeItem.matchScore !== undefined && (
+              <div className="bg-emerald-600 text-white text-[11px] font-extrabold px-3 py-1 rounded-bl-xl absolute top-0 right-0 shadow-sm flex items-center gap-1">
+                <i className="ri-flashlight-fill text-amber-300"></i>
+                {routeItem.matchScore}% Match
+              </div>
+            )}
+
             {/* Captain Header */}
-            <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
+            <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100 mt-1">
               <div className="flex items-center gap-3">
                 <img
                   className="w-11 h-11 rounded-full object-cover border-2 border-white shadow-sm"
@@ -115,6 +134,13 @@ const CaptainRouteList = ({ onSelectCaptainRoute }) => {
                 {rating}
               </div>
             </div>
+
+            {routeItem.pickupDistance !== undefined && (
+              <div className="flex items-center justify-between text-[11px] font-bold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 mb-3">
+                <span>📍 Pickup: {routeItem.pickupDistance}m away</span>
+                <span>🏁 Drop: {routeItem.dropDistance}m away</span>
+              </div>
+            )}
 
             {/* Route Points */}
             <div className="space-y-2 mb-3 bg-gray-50 p-3 rounded-xl border border-gray-100">

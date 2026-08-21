@@ -40,5 +40,6 @@ app.use("/rides", rideRoutes);
 app.use("/api/rides", rideRoutes);
 app.use("/api/routes", captainRouteRoutes);
 app.use("/routes", captainRouteRoutes);
+app.use("/api/captain/routes", captainRouteRoutes);
 
 module.exports = app;

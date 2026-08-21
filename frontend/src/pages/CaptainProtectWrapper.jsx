@@ -7,7 +7,8 @@ import { getApiBaseUrl } from "../config";
 const CaptainProtectWrapper = ({ children }) => {
   const token = localStorage.getItem("captainToken");
   const [captain, setCaptain] = useContext(CaptainDataContext);
-  const [isLoading, setIsLoading] = useState(true);
+  const isCaptainLoaded = Boolean(captain && (captain._id || (captain.email && captain.email.length > 0)));
+  const [isLoading, setIsLoading] = useState(!isCaptainLoaded);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,15 +21,18 @@ const CaptainProtectWrapper = ({ children }) => {
           Authorization: `Bearer ${token}`,
         },
       })
-
       .then((res) => {
-        setCaptain(res.data.captain);
+        if (res.data?.captain) {
+          setCaptain(res.data.captain);
+        }
         setIsLoading(false);
       })
       .catch((err) => {
         console.error(err);
-        localStorage.removeItem("captainToken");
-        navigate("/captain-login");
+        if (!isCaptainLoaded) {
+          localStorage.removeItem("captainToken");
+          navigate("/captain-login");
+        }
         setIsLoading(false);
       });
   }, [token]);

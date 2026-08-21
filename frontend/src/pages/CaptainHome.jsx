@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect, useContext } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import CaptainDetails from "../componets/CaptainDetails";
 import RidePopUp from "../componets/RidePopUp";
 import ConfirmRidePop from "../componets/ConfirmRidePop";
 import LiveTraking from "../componets/LiveTraking";
+import RealtimeNotificationModal from "../componets/RealtimeNotificationModal";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { SocketContext } from "../Context/SocketContext";
@@ -12,14 +13,16 @@ import { CaptainDataContext } from "../Context/CaptainContext";
 import { getApiBaseUrl } from "../config";
 
 const CaptainHome = () => {
+  const navigate = useNavigate();
   const [ridePopUpPanel, setRidePopUpPanel] = useState(false);
   const [confirmRidePopUpPanel, setConfirmRidePopUpPanel] = useState(false);
   const [ride, setRide] = useState(null);
+  const [realtimeNotification, setRealtimeNotification] = useState(null);
 
   const ridePopUpPanelRef = useRef(null);
   const confirmRidePopUpPanelRef = useRef(null);
 
-  const { socket } = useContext(SocketContext);
+  const { socket, sendMessage } = useContext(SocketContext);
   const [captain, setCaptain] = useContext(CaptainDataContext);
 
   useEffect(() => {
@@ -39,14 +42,42 @@ const CaptainHome = () => {
   }, [setCaptain]);
 
   useEffect(() => {
+    if (captain && captain._id && socket) {
+      sendMessage("join", { userType: "captain", userId: captain._id });
+    }
+  }, [captain, socket]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleRideMatched = (data) => {
+      console.log("Real-time ride:matched notification:", data);
+      setRealtimeNotification({ type: "ride:matched", data });
+    };
+
+    const handleRideRequested = (data) => {
+      console.log("Real-time ride:requested notification:", data);
+      setRealtimeNotification({ type: "ride:requested", data });
+    };
+
+    socket.on("ride:matched", handleRideMatched);
+    socket.on("ride:requested", handleRideRequested);
+
+    return () => {
+      socket.off("ride:matched", handleRideMatched);
+      socket.off("ride:requested", handleRideRequested);
+    };
+  }, [socket]);
+
+  useEffect(() => {
+    if (!ridePopUpPanel && !confirmRidePopUpPanel) return;
+
     const handlePopState = () => {
       if (confirmRidePopUpPanel) {
         setConfirmRidePopUpPanel(false);
         setRidePopUpPanel(true);
-        window.history.pushState(null, "", window.location.href);
       } else if (ridePopUpPanel) {
         setRidePopUpPanel(false);
-        window.history.pushState(null, "", window.location.href);
       }
     };
 
@@ -155,14 +186,6 @@ const CaptainHome = () => {
             alt="Uber"
           />
           <div className="flex items-center gap-2 pointer-events-auto">
-            <Link
-              to="/captain/create-route"
-              title="Publish Planned Route"
-              className="h-9 px-3 bg-black text-white backdrop-blur-md shadow-lg flex items-center justify-center rounded-full text-xs font-bold hover:bg-gray-800 transition-all cursor-pointer gap-1"
-            >
-              <i className="ri-map-pin-add-line text-sm"></i>
-              <span>Create Route</span>
-            </Link>
             <div className="bg-emerald-600 text-white text-xs font-bold px-2.5 py-1.5 rounded-full shadow-lg flex items-center gap-1">
               <span className="w-2 h-2 bg-white rounded-full animate-ping"></span>
               Online
@@ -183,8 +206,17 @@ const CaptainHome = () => {
         </div>
 
         {/* Driver Dashboard Panel */}
-        <div className="h-[40%] bg-white p-6 rounded-t-3xl shadow-2xl -mt-6 z-10 border-t border-gray-100 flex flex-col justify-between">
+        <div className="h-[40%] bg-white p-5 rounded-t-3xl shadow-2xl -mt-6 z-10 border-t border-gray-100 flex flex-col justify-between">
           <CaptainDetails />
+
+          <Link
+            to="/captain/create-route"
+            title="Publish Planned Route"
+            className="w-full bg-black hover:bg-gray-800 active:scale-[0.99] text-white py-3.5 rounded-2xl font-bold text-sm shadow-xl shadow-black/10 flex justify-center items-center cursor-pointer transition-all gap-2 mt-3 shrink-0"
+          >
+            <i className="ri-map-pin-add-line text-lg text-emerald-400"></i>
+            <span>Create Route</span>
+          </Link>
         </div>
 
         {/* Ride Request Sheet */}
@@ -209,6 +241,12 @@ const CaptainHome = () => {
             setConfirmRidePopUpPanel={setConfirmRidePopUpPanel}
           />
         </div>
+        {/* Real-time Socket Notification Modal */}
+        <RealtimeNotificationModal
+          notification={realtimeNotification}
+          onClose={() => setRealtimeNotification(null)}
+          onViewRide={() => navigate("/captain/create-route")}
+        />
       </div>
     </div>
   );

@@ -18,7 +18,8 @@ function Riding() {
     sessionStorage.setItem("activeRide", JSON.stringify(passedRide));
   }
 
-  const ride = passedRide || JSON.parse(sessionStorage.getItem("activeRide") || "null");
+  const ride =
+    passedRide || JSON.parse(sessionStorage.getItem("activeRide") || "null");
   const navigate = useNavigate();
   const { socket } = useContext(SocketContext);
   const [user] = useContext(UserDataContext);

@@ -15,7 +15,9 @@ const CaptainRiding = () => {
     sessionStorage.setItem("captainActiveRide", JSON.stringify(passedRide));
   }
 
-  const rideData = passedRide || JSON.parse(sessionStorage.getItem("captainActiveRide") || "null");
+  const rideData =
+    passedRide ||
+    JSON.parse(sessionStorage.getItem("captainActiveRide") || "null");
 
   const distanceKm = rideData?.distance
     ? typeof rideData.distance === "number"

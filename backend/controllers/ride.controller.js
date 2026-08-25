@@ -29,7 +29,9 @@ module.exports.createRide = async (req, res) => {
       50,
     );
 
-    const rideWithUser = await rideModel.findOne({ _id: ride._id }).populate("user");
+    const rideWithUser = await rideModel
+      .findOne({ _id: ride._id })
+      .populate("user");
     rideWithUser.otp = "";
 
     captainsInRadius.map((captain) => {
@@ -44,7 +46,6 @@ module.exports.createRide = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 };
-
 
 module.exports.getFare = async (req, res) => {
   const errors = validationResult(req);
@@ -141,7 +142,7 @@ module.exports.endRide = async (req, res) => {
 
     const totalEarnings = completedRides.reduce(
       (sum, r) => sum + (Number(r.fare) || 0),
-      0
+      0,
     );
 
     await captainModel.findByIdAndUpdate(req.captain._id, {
@@ -187,7 +188,9 @@ module.exports.cancelRide = async (req, res) => {
       }
     }
 
-    return res.status(200).json({ message: "Ride cancelled successfully", ride });
+    return res
+      .status(200)
+      .json({ message: "Ride cancelled successfully", ride });
   } catch (err) {
     console.error("Error cancelling ride:", err);
     return res.status(500).json({ message: err.message });
@@ -254,7 +257,10 @@ module.exports.createRideRequest = async (req, res) => {
         .find({ status: "ACTIVE" })
         .populate("captain", "fullname fullName vehicle rating phone socketId");
 
-      const matches = routeMatchingService.findMatchingRoutesForRide(rideRequest, activeRoutes);
+      const matches = routeMatchingService.findMatchingRoutesForRide(
+        rideRequest,
+        activeRoutes,
+      );
 
       const userName =
         `${req.user.fullname?.firstname || req.user.fullname?.firstName || "User"} ${
@@ -263,7 +269,7 @@ module.exports.createRideRequest = async (req, res) => {
 
       for (const match of matches) {
         const captainObj = activeRoutes.find(
-          (r) => r._id.toString() === match.routeId.toString()
+          (r) => r._id.toString() === match.routeId.toString(),
         )?.captain;
 
         if (captainObj && captainObj.socketId) {
@@ -293,7 +299,10 @@ module.exports.createRideRequest = async (req, res) => {
         }
       }
     } catch (matchErr) {
-      console.error("Error broadcasting real-time ride match to captains:", matchErr);
+      console.error(
+        "Error broadcasting real-time ride match to captains:",
+        matchErr,
+      );
     }
 
     return res.status(201).json({
@@ -308,7 +317,9 @@ module.exports.createRideRequest = async (req, res) => {
 
 module.exports.getMyRides = async (req, res) => {
   try {
-    const rides = await RideRequest.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    const rides = await RideRequest.find({ userId: req.user._id }).sort({
+      createdAt: -1,
+    });
     return res.status(200).json(rides);
   } catch (error) {
     console.error("Error in getMyRides:", error);
@@ -318,7 +329,10 @@ module.exports.getMyRides = async (req, res) => {
 
 module.exports.getRideById = async (req, res) => {
   try {
-    const ride = await RideRequest.findOne({ _id: req.params.id, userId: req.user._id });
+    const ride = await RideRequest.findOne({
+      _id: req.params.id,
+      userId: req.user._id,
+    });
     if (!ride) {
       return res.status(404).json({ message: "Ride request not found" });
     }
@@ -328,7 +342,3 @@ module.exports.getRideById = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 };
-
-
-
-

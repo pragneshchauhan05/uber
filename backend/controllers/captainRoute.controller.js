@@ -26,7 +26,9 @@ module.exports.createRoute = async (req, res) => {
     let startLng = startLocation?.lng;
 
     if (!startLat || !startLng) {
-      const startCoords = await mapService.getAddressCoordinate(startLocation.address);
+      const startCoords = await mapService.getAddressCoordinate(
+        startLocation.address,
+      );
       startLat = startCoords.ltd || startCoords.lat || 23.0225;
       startLng = startCoords.lng || 72.5714;
     }
@@ -35,7 +37,9 @@ module.exports.createRoute = async (req, res) => {
     let destLng = destination?.lng;
 
     if (!destLat || !destLng) {
-      const destCoords = await mapService.getAddressCoordinate(destination.address);
+      const destCoords = await mapService.getAddressCoordinate(
+        destination.address,
+      );
       destLat = destCoords.ltd || destCoords.lat || 23.0225;
       destLng = destCoords.lng || 72.5714;
     }
@@ -83,7 +87,9 @@ module.exports.createRoute = async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating captain route:", error);
-    return res.status(500).json({ message: error.message || "Failed to create route" });
+    return res
+      .status(500)
+      .json({ message: error.message || "Failed to create route" });
   }
 };
 
@@ -96,7 +102,9 @@ module.exports.getMyRoutes = async (req, res) => {
     return res.status(200).json({ routes });
   } catch (error) {
     console.error("Error fetching captain routes:", error);
-    return res.status(500).json({ message: error.message || "Failed to fetch routes" });
+    return res
+      .status(500)
+      .json({ message: error.message || "Failed to fetch routes" });
   }
 };
 
@@ -109,13 +117,17 @@ module.exports.deleteRoute = async (req, res) => {
     });
 
     if (!deletedRoute) {
-      return res.status(404).json({ message: "Route not found or unauthorized" });
+      return res
+        .status(404)
+        .json({ message: "Route not found or unauthorized" });
     }
 
     return res.status(200).json({ message: "Route deleted successfully", id });
   } catch (error) {
     console.error("Error deleting captain route:", error);
-    return res.status(500).json({ message: error.message || "Failed to delete route" });
+    return res
+      .status(500)
+      .json({ message: error.message || "Failed to delete route" });
   }
 };
 
@@ -123,13 +135,18 @@ module.exports.getAllActiveRoutes = async (req, res) => {
   try {
     const routes = await captainRouteModel
       .find({ status: "ACTIVE" })
-      .populate("captain", "fullname fullName vehicle rating phone earnings socketId")
+      .populate(
+        "captain",
+        "fullname fullName vehicle rating phone earnings socketId",
+      )
       .sort({ departureDate: 1, departureTime: 1 });
 
     return res.status(200).json({ routes });
   } catch (error) {
     console.error("Error fetching all active captain routes:", error);
-    return res.status(500).json({ message: error.message || "Failed to fetch active routes" });
+    return res
+      .status(500)
+      .json({ message: error.message || "Failed to fetch active routes" });
   }
 };
 
@@ -143,7 +160,9 @@ module.exports.bookCaptainRoute = async (req, res) => {
     }
 
     if (route.availableSeats <= route.seatsBooked) {
-      return res.status(400).json({ message: "No seats available on this route" });
+      return res
+        .status(400)
+        .json({ message: "No seats available on this route" });
     }
 
     route.seatsBooked += 1;
@@ -157,7 +176,7 @@ module.exports.bookCaptainRoute = async (req, res) => {
           status: "ACCEPTED",
           captainId: route.captain._id,
         },
-        { new: true }
+        { new: true },
       );
     }
 
@@ -168,7 +187,9 @@ module.exports.bookCaptainRoute = async (req, res) => {
     });
   } catch (error) {
     console.error("Error booking captain route:", error);
-    return res.status(500).json({ message: error.message || "Failed to book captain route" });
+    return res
+      .status(500)
+      .json({ message: error.message || "Failed to book captain route" });
   }
 };
 
@@ -190,17 +211,22 @@ module.exports.getMatchingRoutes = async (req, res) => {
     // Fetch candidate active captain routes
     const activeRoutes = await captainRouteModel
       .find({ status: "ACTIVE" })
-      .populate("captain", "fullname fullName vehicle rating phone earnings socketId");
+      .populate(
+        "captain",
+        "fullname fullName vehicle rating phone earnings socketId",
+      );
 
     const matches = routeMatchingService.findMatchingRoutesForRide(
       rideRequest,
-      activeRoutes
+      activeRoutes,
     );
 
     return res.status(200).json(matches);
   } catch (error) {
     console.error("Error finding matching captain routes:", error);
-    return res.status(500).json({ message: error.message || "Failed to find matching routes" });
+    return res
+      .status(500)
+      .json({ message: error.message || "Failed to find matching routes" });
   }
 };
 
@@ -219,24 +245,27 @@ module.exports.getCaptainRouteMatches = async (req, res) => {
 
     // Ownership check: Only captain who owns this route can view matches
     if (captainRoute.captain.toString() !== req.captain._id.toString()) {
-      return res.status(403).json({ message: "Unauthorized access to this captain route" });
+      return res
+        .status(403)
+        .json({ message: "Unauthorized access to this captain route" });
     }
 
     // Fetch candidate active searching ride requests
-    const candidateRides = await RideRequest.find({ status: "SEARCHING" }).populate(
-      "userId",
-      "fullname fullName email"
-    );
+    const candidateRides = await RideRequest.find({
+      status: "SEARCHING",
+    }).populate("userId", "fullname fullName email");
 
     const matches = routeMatchingService.findMatchingRidesForCaptainRoute(
       captainRoute,
-      candidateRides
+      candidateRides,
     );
 
     return res.status(200).json(matches);
   } catch (error) {
     console.error("Error fetching matching rides for captain route:", error);
-    return res.status(500).json({ message: error.message || "Failed to fetch matching rides" });
+    return res
+      .status(500)
+      .json({ message: error.message || "Failed to fetch matching rides" });
   }
 };
 
@@ -248,7 +277,9 @@ module.exports.acceptRideRequest = async (req, res) => {
       return res.status(400).json({ message: "Invalid or missing routeId" });
     }
     if (!rideRequestId || !mongoose.Types.ObjectId.isValid(rideRequestId)) {
-      return res.status(400).json({ message: "Invalid or missing rideRequestId" });
+      return res
+        .status(400)
+        .json({ message: "Invalid or missing rideRequestId" });
     }
 
     // 1. Verify route existence & captain ownership
@@ -258,7 +289,9 @@ module.exports.acceptRideRequest = async (req, res) => {
     }
 
     if (route.captain.toString() !== req.captain._id.toString()) {
-      return res.status(403).json({ message: "Unauthorized access to this captain route" });
+      return res
+        .status(403)
+        .json({ message: "Unauthorized access to this captain route" });
     }
 
     // 2. Check if Ride Request is already confirmed by another captain
@@ -273,7 +306,8 @@ module.exports.acceptRideRequest = async (req, res) => {
       existingRideReq.status === "COMPLETED"
     ) {
       return res.status(409).json({
-        message: "This ride request has already been confirmed or accepted by another Captain.",
+        message:
+          "This ride request has already been confirmed or accepted by another Captain.",
         status: existingRideReq.status,
       });
     }
@@ -287,7 +321,7 @@ module.exports.acceptRideRequest = async (req, res) => {
         $expr: { $lt: ["$seatsBooked", "$availableSeats"] },
       },
       { $inc: { seatsBooked: 1 } },
-      { new: true }
+      { new: true },
     );
 
     if (!updatedRoute) {
@@ -307,12 +341,14 @@ module.exports.acceptRideRequest = async (req, res) => {
         captainId: req.captain._id,
         routeId: routeId,
       },
-      { new: true }
+      { new: true },
     );
 
     // If another captain confirmed it concurrently between step 2 and step 4, rollback seat increment
     if (!confirmedRideRequest) {
-      await captainRouteModel.findByIdAndUpdate(routeId, { $inc: { seatsBooked: -1 } });
+      await captainRouteModel.findByIdAndUpdate(routeId, {
+        $inc: { seatsBooked: -1 },
+      });
       return res.status(409).json({
         message: "This ride request was just confirmed by another Captain.",
       });
@@ -324,7 +360,9 @@ module.exports.acceptRideRequest = async (req, res) => {
       if (riderUser && riderUser.socketId) {
         const captainName =
           `${req.captain.fullname?.firstname || req.captain.fullname?.firstName || "Captain"} ${
-            req.captain.fullname?.lastname || req.captain.fullname?.lastName || ""
+            req.captain.fullname?.lastname ||
+            req.captain.fullname?.lastName ||
+            ""
           }`.trim() || "Captain";
 
         const notificationData = {
@@ -361,7 +399,9 @@ module.exports.acceptRideRequest = async (req, res) => {
     });
   } catch (error) {
     console.error("Error accepting ride request:", error);
-    return res.status(500).json({ message: error.message || "Failed to accept ride request" });
+    return res
+      .status(500)
+      .json({ message: error.message || "Failed to accept ride request" });
   }
 };
 
@@ -376,14 +416,16 @@ module.exports.rejectRideRequest = async (req, res) => {
     if (routeId && mongoose.Types.ObjectId.isValid(routeId)) {
       const route = await captainRouteModel.findById(routeId);
       if (route && route.captain.toString() !== req.captain._id.toString()) {
-        return res.status(403).json({ message: "Unauthorized access to this captain route" });
+        return res
+          .status(403)
+          .json({ message: "Unauthorized access to this captain route" });
       }
     }
 
     const updatedRideRequest = await RideRequest.findByIdAndUpdate(
       rideRequestId,
       { status: "CANCELLED" },
-      { new: true }
+      { new: true },
     );
 
     // Notify user via Socket.IO in real time
@@ -398,7 +440,10 @@ module.exports.rejectRideRequest = async (req, res) => {
         }
       }
     } catch (socketErr) {
-      console.error("Error sending ride:rejected socket notification to user:", socketErr);
+      console.error(
+        "Error sending ride:rejected socket notification to user:",
+        socketErr,
+      );
     }
 
     return res.status(200).json({
@@ -407,6 +452,8 @@ module.exports.rejectRideRequest = async (req, res) => {
     });
   } catch (error) {
     console.error("Error rejecting ride request:", error);
-    return res.status(500).json({ message: error.message || "Failed to reject ride request" });
+    return res
+      .status(500)
+      .json({ message: error.message || "Failed to reject ride request" });
   }
 };

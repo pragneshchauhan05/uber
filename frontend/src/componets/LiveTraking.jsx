@@ -72,9 +72,15 @@ const LeafletMap = ({ currentPosition, pickupCoords, dropCoords }) => {
       });
 
       if (!currentMarkerRef.current) {
-        currentMarkerRef.current = window.L.marker([currentPosition.lat, currentPosition.lng], { icon: customIcon }).addTo(map);
+        currentMarkerRef.current = window.L.marker(
+          [currentPosition.lat, currentPosition.lng],
+          { icon: customIcon },
+        ).addTo(map);
       } else {
-        currentMarkerRef.current.setLatLng([currentPosition.lat, currentPosition.lng]);
+        currentMarkerRef.current.setLatLng([
+          currentPosition.lat,
+          currentPosition.lng,
+        ]);
       }
     } else if (currentMarkerRef.current) {
       map.removeLayer(currentMarkerRef.current);
@@ -91,7 +97,10 @@ const LeafletMap = ({ currentPosition, pickupCoords, dropCoords }) => {
       });
 
       if (!pickupMarkerRef.current) {
-        pickupMarkerRef.current = window.L.marker([pickupCoords.lat, pickupCoords.lng], { icon: pickupIcon }).addTo(map);
+        pickupMarkerRef.current = window.L.marker(
+          [pickupCoords.lat, pickupCoords.lng],
+          { icon: pickupIcon },
+        ).addTo(map);
       } else {
         pickupMarkerRef.current.setLatLng([pickupCoords.lat, pickupCoords.lng]);
       }
@@ -110,7 +119,10 @@ const LeafletMap = ({ currentPosition, pickupCoords, dropCoords }) => {
       });
 
       if (!dropMarkerRef.current) {
-        dropMarkerRef.current = window.L.marker([dropCoords.lat, dropCoords.lng], { icon: dropIcon }).addTo(map);
+        dropMarkerRef.current = window.L.marker(
+          [dropCoords.lat, dropCoords.lng],
+          { icon: dropIcon },
+        ).addTo(map);
       } else {
         dropMarkerRef.current.setLatLng([dropCoords.lat, dropCoords.lng]);
       }
@@ -123,7 +135,7 @@ const LeafletMap = ({ currentPosition, pickupCoords, dropCoords }) => {
     if (pickupCoords?.lat && dropCoords?.lat) {
       const bounds = window.L.latLngBounds(
         [pickupCoords.lat, pickupCoords.lng],
-        [dropCoords.lat, dropCoords.lng]
+        [dropCoords.lat, dropCoords.lng],
       );
       map.fitBounds(bounds, { padding: [50, 50] });
     } else if (pickupCoords?.lat) {
@@ -148,7 +160,9 @@ const LiveTraking = ({ pickupCoords, dropCoords }) => {
 
   useEffect(() => {
     window.gm_authFailure = () => {
-      console.warn("Google Maps API auth/quota failure detected. Switching to OpenStreetMap fallback.");
+      console.warn(
+        "Google Maps API auth/quota failure detected. Switching to OpenStreetMap fallback.",
+      );
       setMapError(true);
     };
   }, []);
@@ -161,7 +175,7 @@ const LiveTraking = ({ pickupCoords, dropCoords }) => {
           setCurrentPosition({ lat: latitude, lng: longitude });
         },
         () => {},
-        { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 },
       );
 
       const watchId = navigator.geolocation.watchPosition(
@@ -170,7 +184,7 @@ const LiveTraking = ({ pickupCoords, dropCoords }) => {
           setCurrentPosition({ lat: latitude, lng: longitude });
         },
         () => {},
-        { enableHighAccuracy: false, timeout: 10000, maximumAge: 30000 }
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 30000 },
       );
 
       return () => navigator.geolocation.clearWatch(watchId);

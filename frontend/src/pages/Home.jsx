@@ -18,8 +18,12 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { getApiBaseUrl } from "../config";
 
 const Home = () => {
-  const [pickup, setPickup] = useState(() => sessionStorage.getItem("home_pickup") || "");
-  const [destination, setDestination] = useState(() => sessionStorage.getItem("home_destination") || "");
+  const [pickup, setPickup] = useState(
+    () => sessionStorage.getItem("home_pickup") || "",
+  );
+  const [destination, setDestination] = useState(
+    () => sessionStorage.getItem("home_destination") || "",
+  );
   const [panelOpen, setPanelOpen] = useState(false);
   const panelRef = useRef(null);
   const panelCloseRef = useRef(null);
@@ -27,10 +31,18 @@ const Home = () => {
   const confirmedRideRef = useRef(null);
   const vehicleFoundRef = useRef(null);
   const waitingForDriverRef = useRef(null);
-  const [vehiclePanelOpen, setVehiclePanelOpen] = useState(() => sessionStorage.getItem("home_vehiclePanelOpen") === "true");
-  const [confirmedRide, setConfirmedRide] = useState(() => sessionStorage.getItem("home_confirmedRide") === "true");
-  const [vehicleFound, setVehicleFound] = useState(() => sessionStorage.getItem("home_vehicleFound") === "true");
-  const [waitingForDriver, setWaitingForDriver] = useState(() => sessionStorage.getItem("home_waitingForDriver") === "true");
+  const [vehiclePanelOpen, setVehiclePanelOpen] = useState(
+    () => sessionStorage.getItem("home_vehiclePanelOpen") === "true",
+  );
+  const [confirmedRide, setConfirmedRide] = useState(
+    () => sessionStorage.getItem("home_confirmedRide") === "true",
+  );
+  const [vehicleFound, setVehicleFound] = useState(
+    () => sessionStorage.getItem("home_vehicleFound") === "true",
+  );
+  const [waitingForDriver, setWaitingForDriver] = useState(
+    () => sessionStorage.getItem("home_waitingForDriver") === "true",
+  );
   const [fare, setFare] = useState(() => {
     try {
       const saved = sessionStorage.getItem("home_fare");
@@ -39,12 +51,18 @@ const Home = () => {
       return {};
     }
   });
-  const [vehicleType, setVehicleType] = useState(() => sessionStorage.getItem("home_vehicleType") || null);
+  const [vehicleType, setVehicleType] = useState(
+    () => sessionStorage.getItem("home_vehicleType") || null,
+  );
   const [suggestions, setSuggestions] = useState([]);
   const [activeField, setActiveField] = useState(null);
   const [activeTab, setActiveTab] = useState("instant");
-  const [requestedDate, setRequestedDate] = useState(() => new Date().toISOString().split("T")[0]);
-  const [requestedTime, setRequestedTime] = useState(() => new Date().toTimeString().slice(0, 5));
+  const [requestedDate, setRequestedDate] = useState(
+    () => new Date().toISOString().split("T")[0],
+  );
+  const [requestedTime, setRequestedTime] = useState(() =>
+    new Date().toTimeString().slice(0, 5),
+  );
   const [pickupCoords, setPickupCoords] = useState(null);
   const [dropCoords, setDropCoords] = useState(null);
   const [isSubmittingRideRequest, setIsSubmittingRideRequest] = useState(false);
@@ -155,7 +173,13 @@ const Home = () => {
   }, [location.state]);
 
   useEffect(() => {
-    if (!panelOpen && !vehiclePanelOpen && !confirmedRide && !vehicleFound && !waitingForDriver) {
+    if (
+      !panelOpen &&
+      !vehiclePanelOpen &&
+      !confirmedRide &&
+      !vehicleFound &&
+      !waitingForDriver
+    ) {
       return;
     }
 
@@ -183,10 +207,23 @@ const Home = () => {
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, [panelOpen, vehiclePanelOpen, confirmedRide, vehicleFound, waitingForDriver]);
+  }, [
+    panelOpen,
+    vehiclePanelOpen,
+    confirmedRide,
+    vehicleFound,
+    waitingForDriver,
+  ]);
 
   useEffect(() => {
-    if (pickup || destination || vehiclePanelOpen || confirmedRide || vehicleFound || waitingForDriver) {
+    if (
+      pickup ||
+      destination ||
+      vehiclePanelOpen ||
+      confirmedRide ||
+      vehicleFound ||
+      waitingForDriver
+    ) {
       sessionStorage.setItem("home_pickup", pickup);
       sessionStorage.setItem("home_destination", destination);
       sessionStorage.setItem("home_vehiclePanelOpen", vehiclePanelOpen);
@@ -207,7 +244,17 @@ const Home = () => {
       sessionStorage.removeItem("home_vehicleType");
       sessionStorage.removeItem("home_ride");
     }
-  }, [pickup, destination, vehiclePanelOpen, confirmedRide, vehicleFound, waitingForDriver, fare, vehicleType, ride]);
+  }, [
+    pickup,
+    destination,
+    vehiclePanelOpen,
+    confirmedRide,
+    vehicleFound,
+    waitingForDriver,
+    fare,
+    vehicleType,
+    ride,
+  ]);
 
   useEffect(() => {
     if (user && user._id) {
@@ -557,9 +604,7 @@ const Home = () => {
         <div className="flex flex-col justify-end h-full absolute inset-0 z-10 pointer-events-none">
           <div
             className={`bg-white p-5 sm:p-6 shadow-2xl relative pointer-events-auto border-t border-gray-100 transition-all duration-400 ease-in-out flex flex-col justify-between ${
-              panelOpen
-                ? "h-full rounded-none z-30"
-                : "h-auto rounded-t-3xl"
+              panelOpen ? "h-full rounded-none z-30" : "h-auto rounded-t-3xl"
             }`}
           >
             <h5
@@ -568,7 +613,9 @@ const Home = () => {
               }}
               ref={panelCloseRef}
               className={`absolute top-4 right-5 text-gray-500 hover:text-black cursor-pointer text-2xl transition-all z-20 ${
-                panelOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+                panelOpen
+                  ? "opacity-100 pointer-events-auto"
+                  : "opacity-0 pointer-events-none"
               }`}
             >
               <i className="ri-arrow-down-wide-line"></i>
@@ -606,7 +653,10 @@ const Home = () => {
                   Find a Trip
                 </h4>
 
-                <form onSubmit={submitHandler} className="relative space-y-3 shrink-0">
+                <form
+                  onSubmit={submitHandler}
+                  className="relative space-y-3 shrink-0"
+                >
                   {/* Connecting Line Indicator */}
                   <div className="absolute left-4 top-4 bottom-4 w-0.5 bg-gray-300 flex flex-col justify-between items-center py-2 z-10">
                     <div className="w-2.5 h-2.5 bg-black rounded-full"></div>
@@ -634,7 +684,10 @@ const Home = () => {
                           navigator.geolocation.getCurrentPosition(
                             async (position) => {
                               const { latitude, longitude } = position.coords;
-                              setPickupCoords({ lat: latitude, lng: longitude });
+                              setPickupCoords({
+                                lat: latitude,
+                                lng: longitude,
+                              });
                               try {
                                 const response = await fetch(
                                   `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,

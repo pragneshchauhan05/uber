@@ -27,15 +27,9 @@ const CaptainRiding = () => {
 
   useGSAP(
     function () {
-      if (finishRidePanel) {
+      if (finishRidePanelRef.current) {
         gsap.to(finishRidePanelRef.current, {
-          y: "0%",
-          duration: 0.4,
-          ease: "power3.inOut",
-        });
-      } else {
-        gsap.to(finishRidePanelRef.current, {
-          y: "100%",
+          y: finishRidePanel ? "0%" : "100%",
           duration: 0.4,
           ease: "power3.inOut",
         });

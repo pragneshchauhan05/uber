@@ -104,10 +104,12 @@ module.exports.startRide = async (req, res) => {
       captain: req.captain,
     });
 
-    sendMasegeToSocketId(ride.user.socketId, {
-      event: "ride-started",
-      data: ride,
-    });
+    if (ride.user && ride.user.socketId) {
+      sendMasegeToSocketId(ride.user.socketId, {
+        event: "ride-started",
+        data: ride,
+      });
+    }
 
     return res.status(200).json(ride);
   } catch (err) {
@@ -130,10 +132,12 @@ module.exports.endRide = async (req, res) => {
       captain: req.captain,
     });
 
-    sendMasegeToSocketId(ride.user.socketId, {
-      event: "ride-ended",
-      data: ride,
-    });
+    if (ride.user && ride.user.socketId) {
+      sendMasegeToSocketId(ride.user.socketId, {
+        event: "ride-ended",
+        data: ride,
+      });
+    }
 
     const completedRides = await rideModel.find({
       captain: req.captain._id,

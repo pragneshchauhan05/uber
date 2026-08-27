@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, memo } from "react";
-import { useJsApiLoader, GoogleMap, Marker } from "@react-google-maps/api";
+import { useJsApiLoader, GoogleMap, MarkerF, Polyline } from "@react-google-maps/api";
+
+const MAP_LIBRARIES = ["marker", "places"];
 
 const containerStyle = {
   width: "100%",
@@ -11,12 +13,14 @@ const defaultCenter = {
   lng: 72.8311,
 };
 
-const LeafletMap = ({ currentPosition, pickupCoords, dropCoords }) => {
+const LeafletMap = ({ currentPosition, pickupCoords, dropCoords, captainCoords }) => {
   const mapContainerRef = useRef(null);
   const leafletMapRef = useRef(null);
   const pickupMarkerRef = useRef(null);
   const dropMarkerRef = useRef(null);
   const currentMarkerRef = useRef(null);
+  const captainMarkerRef = useRef(null);
+  const captainPolylineRef = useRef(null);
   const [isLeafletLoaded, setIsLeafletLoaded] = useState(Boolean(window.L));
 
   useEffect(() => {
@@ -42,8 +46,8 @@ const LeafletMap = ({ currentPosition, pickupCoords, dropCoords }) => {
   useEffect(() => {
     if (!isLeafletLoaded || !mapContainerRef.current || !window.L) return;
 
-    const centerLat = pickupCoords?.lat || currentPosition.lat;
-    const centerLng = pickupCoords?.lng || currentPosition.lng;
+    const centerLat = captainCoords?.lat || pickupCoords?.lat || currentPosition.lat;
+    const centerLng = captainCoords?.lng || pickupCoords?.lng || currentPosition.lng;
 
     if (!leafletMapRef.current) {
       const map = window.L.map(mapContainerRef.current, {
@@ -63,7 +67,7 @@ const LeafletMap = ({ currentPosition, pickupCoords, dropCoords }) => {
     const map = leafletMapRef.current;
 
     // Current position marker
-    if (!pickupCoords && !dropCoords) {
+    if (!pickupCoords && !dropCoords && !captainCoords) {
       const customIcon = window.L.divIcon({
         className: "custom-leaflet-marker",
         html: `<div style="background-color: #000; width: 18px; height: 18px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 10px rgba(0,0,0,0.5);"></div>`,
@@ -85,6 +89,51 @@ const LeafletMap = ({ currentPosition, pickupCoords, dropCoords }) => {
     } else if (currentMarkerRef.current) {
       map.removeLayer(currentMarkerRef.current);
       currentMarkerRef.current = null;
+    }
+
+    // Captain Marker & Polyline to Pickup
+    if (captainCoords?.lat && captainCoords?.lng) {
+      const captainIcon = window.L.divIcon({
+        className: "leaflet-captain-marker",
+        html: `<div style="background-color: #0f172a; color: #38bdf8; border: 2px solid #38bdf8; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px; box-shadow: 0 2px 8px rgba(0,0,0,0.4); display: flex; items-center; gap: 4px;">🚖 Captain</div>`,
+        iconSize: [68, 24],
+        iconAnchor: [34, 24],
+      });
+
+      if (!captainMarkerRef.current) {
+        captainMarkerRef.current = window.L.marker(
+          [captainCoords.lat, captainCoords.lng],
+          { icon: captainIcon },
+        ).addTo(map);
+      } else {
+        captainMarkerRef.current.setLatLng([captainCoords.lat, captainCoords.lng]);
+      }
+
+      if (pickupCoords?.lat && pickupCoords?.lng) {
+        const lineCoords = [
+          [captainCoords.lat, captainCoords.lng],
+          [pickupCoords.lat, pickupCoords.lng],
+        ];
+        if (!captainPolylineRef.current) {
+          captainPolylineRef.current = window.L.polyline(lineCoords, {
+            color: "#2563eb",
+            weight: 5,
+            dashArray: "8, 8",
+            opacity: 0.85,
+          }).addTo(map);
+        } else {
+          captainPolylineRef.current.setLatLngs(lineCoords);
+        }
+      }
+    } else {
+      if (captainMarkerRef.current) {
+        map.removeLayer(captainMarkerRef.current);
+        captainMarkerRef.current = null;
+      }
+      if (captainPolylineRef.current) {
+        map.removeLayer(captainPolylineRef.current);
+        captainPolylineRef.current = null;
+      }
     }
 
     // Pickup Marker
@@ -131,8 +180,14 @@ const LeafletMap = ({ currentPosition, pickupCoords, dropCoords }) => {
       dropMarkerRef.current = null;
     }
 
-    // Fit bounds if both pickup & drop exist
-    if (pickupCoords?.lat && dropCoords?.lat) {
+    // Fit bounds priority: 1) Captain to Pickup 2) Pickup to Drop 3) Single point
+    if (captainCoords?.lat && pickupCoords?.lat) {
+      const bounds = window.L.latLngBounds(
+        [captainCoords.lat, captainCoords.lng],
+        [pickupCoords.lat, pickupCoords.lng],
+      );
+      map.fitBounds(bounds, { padding: [60, 60] });
+    } else if (pickupCoords?.lat && dropCoords?.lat) {
       const bounds = window.L.latLngBounds(
         [pickupCoords.lat, pickupCoords.lng],
         [dropCoords.lat, dropCoords.lng],
@@ -141,12 +196,12 @@ const LeafletMap = ({ currentPosition, pickupCoords, dropCoords }) => {
     } else if (pickupCoords?.lat) {
       map.setView([pickupCoords.lat, pickupCoords.lng], 15);
     }
-  }, [isLeafletLoaded, currentPosition, pickupCoords, dropCoords]);
+  }, [isLeafletLoaded, currentPosition, pickupCoords, dropCoords, captainCoords]);
 
   return <div ref={mapContainerRef} className="w-full h-full z-0 relative" />;
 };
 
-const LiveTraking = ({ pickupCoords, dropCoords }) => {
+const LiveTraking = ({ pickupCoords, dropCoords, captainCoords }) => {
   const [currentPosition, setCurrentPosition] = useState(defaultCenter);
   const [map, setMap] = useState(null);
   const [mapError, setMapError] = useState(false);
@@ -156,9 +211,21 @@ const LiveTraking = ({ pickupCoords, dropCoords }) => {
   const { isLoaded, loadError } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: apiKey,
+    libraries: MAP_LIBRARIES,
   });
 
   useEffect(() => {
+    const originalWarn = console.warn;
+    console.warn = (...args) => {
+      if (
+        typeof args[0] === "string" &&
+        args[0].includes("google.maps.Marker is deprecated")
+      ) {
+        return;
+      }
+      originalWarn(...args);
+    };
+
     window.gm_authFailure = () => {
       console.warn(
         "Google Maps API auth/quota failure detected. Switching to OpenStreetMap fallback.",
@@ -202,17 +269,22 @@ const LiveTraking = ({ pickupCoords, dropCoords }) => {
   // Fit bounds when Google Maps is loaded and coordinates change
   useEffect(() => {
     if (map && window.google) {
-      if (pickupCoords?.lat && dropCoords?.lat) {
+      if (captainCoords?.lat && pickupCoords?.lat) {
+        const bounds = new window.google.maps.LatLngBounds();
+        bounds.extend(captainCoords);
+        bounds.extend(pickupCoords);
+        map.fitBounds(bounds, { top: 60, bottom: 60, left: 60, right: 60 });
+      } else if (pickupCoords?.lat && dropCoords?.lat) {
         const bounds = new window.google.maps.LatLngBounds();
         bounds.extend(pickupCoords);
         bounds.extend(dropCoords);
-        map.fitBounds(bounds);
+        map.fitBounds(bounds, { top: 60, bottom: 60, left: 60, right: 60 });
       } else if (pickupCoords?.lat) {
         map.panTo(pickupCoords);
         map.setZoom(15);
       }
     }
-  }, [map, pickupCoords, dropCoords]);
+  }, [map, pickupCoords, dropCoords, captainCoords]);
 
   if (loadError || mapError || !apiKey) {
     return (
@@ -220,6 +292,7 @@ const LiveTraking = ({ pickupCoords, dropCoords }) => {
         currentPosition={currentPosition}
         pickupCoords={pickupCoords}
         dropCoords={dropCoords}
+        captainCoords={captainCoords}
       />
     );
   }
@@ -235,7 +308,11 @@ const LiveTraking = ({ pickupCoords, dropCoords }) => {
     );
   }
 
-  const mapCenter = pickupCoords?.lat ? pickupCoords : currentPosition;
+  const mapCenter = captainCoords?.lat
+    ? captainCoords
+    : pickupCoords?.lat
+      ? pickupCoords
+      : currentPosition;
 
   return (
     <GoogleMap
@@ -249,10 +326,20 @@ const LiveTraking = ({ pickupCoords, dropCoords }) => {
         zoomControl: true,
       }}
     >
-      {!pickupCoords && !dropCoords && <Marker position={currentPosition} />}
+      {!pickupCoords && !dropCoords && !captainCoords && (
+        <MarkerF position={currentPosition} />
+      )}
+
+      {captainCoords?.lat && captainCoords?.lng && (
+        <MarkerF
+          position={captainCoords}
+          title="Captain Location"
+          label={{ text: "🚖", color: "#ffffff", fontWeight: "bold" }}
+        />
+      )}
 
       {pickupCoords?.lat && pickupCoords?.lng && (
-        <Marker
+        <MarkerF
           position={pickupCoords}
           title="Pickup Location"
           label={{ text: "P", color: "#ffffff", fontWeight: "bold" }}
@@ -260,10 +347,21 @@ const LiveTraking = ({ pickupCoords, dropCoords }) => {
       )}
 
       {dropCoords?.lat && dropCoords?.lng && (
-        <Marker
+        <MarkerF
           position={dropCoords}
           title="Drop Location"
           label={{ text: "D", color: "#ffffff", fontWeight: "bold" }}
+        />
+      )}
+
+      {captainCoords?.lat && captainCoords?.lng && pickupCoords?.lat && pickupCoords?.lng && (
+        <Polyline
+          path={[captainCoords, pickupCoords]}
+          options={{
+            strokeColor: "#2563eb",
+            strokeOpacity: 0.85,
+            strokeWeight: 5,
+          }}
         />
       )}
     </GoogleMap>

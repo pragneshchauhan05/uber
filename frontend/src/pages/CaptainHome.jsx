@@ -139,15 +139,9 @@ const CaptainHome = () => {
 
   useGSAP(
     function () {
-      if (ridePopUpPanel) {
+      if (ridePopUpPanelRef.current) {
         gsap.to(ridePopUpPanelRef.current, {
-          y: "0%",
-          duration: 0.4,
-          ease: "power3.inOut",
-        });
-      } else {
-        gsap.to(ridePopUpPanelRef.current, {
-          y: "100%",
+          y: ridePopUpPanel ? "0%" : "100%",
           duration: 0.4,
           ease: "power3.inOut",
         });
@@ -158,15 +152,9 @@ const CaptainHome = () => {
 
   useGSAP(
     function () {
-      if (confirmRidePopUpPanel) {
+      if (confirmRidePopUpPanelRef.current) {
         gsap.to(confirmRidePopUpPanelRef.current, {
-          y: "0%",
-          duration: 0.4,
-          ease: "power3.inOut",
-        });
-      } else {
-        gsap.to(confirmRidePopUpPanelRef.current, {
-          y: "100%",
+          y: confirmRidePopUpPanel ? "0%" : "100%",
           duration: 0.4,
           ease: "power3.inOut",
         });

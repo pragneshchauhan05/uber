@@ -65,6 +65,7 @@ const Home = () => {
   );
   const [pickupCoords, setPickupCoords] = useState(null);
   const [dropCoords, setDropCoords] = useState(null);
+  const [captainCoords, setCaptainCoords] = useState(null);
   const [isSubmittingRideRequest, setIsSubmittingRideRequest] = useState(false);
   const [rideRequestMessage, setRideRequestMessage] = useState("");
 
@@ -153,6 +154,7 @@ const Home = () => {
     setFare({});
     setVehicleType(null);
     setRide(null);
+    setCaptainCoords(null);
     sessionStorage.removeItem("activeRide");
     sessionStorage.removeItem("home_pickup");
     sessionStorage.removeItem("home_destination");
@@ -270,6 +272,24 @@ const Home = () => {
       setVehicleFound(false);
       setWaitingForDriver(true);
       setRide(rideData);
+
+      if (rideData?.captain?.location) {
+        const cLat = Number(rideData.captain.location.lat || rideData.captain.location.ltd);
+        const cLng = Number(rideData.captain.location.lng);
+        if (cLat && cLng) {
+          setCaptainCoords({ lat: cLat, lng: cLng });
+        }
+      }
+    });
+
+    socket.on("captain-location-updated", (data) => {
+      if (data?.location) {
+        const cLat = Number(data.location.lat || data.location.ltd);
+        const cLng = Number(data.location.lng);
+        if (cLat && cLng) {
+          setCaptainCoords({ lat: cLat, lng: cLng });
+        }
+      }
     });
 
     socket.on("ride-started", (rideData) => {
@@ -287,6 +307,7 @@ const Home = () => {
 
     return () => {
       socket.off("ride-confirmed");
+      socket.off("captain-location-updated");
       socket.off("ride-started");
       socket.off("ride-ended");
       socket.off("ride-cancelled");
@@ -469,27 +490,17 @@ const Home = () => {
 
   useGSAP(
     function () {
-      if (panelOpen) {
+      if (panelRef.current) {
         gsap.to(panelRef.current, {
-          height: "70%",
-          padding: 24,
+          height: panelOpen ? "70%" : "0%",
+          padding: panelOpen ? 24 : 0,
           duration: 0.4,
           ease: "power3.inOut",
         });
+      }
+      if (panelCloseRef.current) {
         gsap.to(panelCloseRef.current, {
-          opacity: 1,
-          duration: 0.3,
-          ease: "power2.out",
-        });
-      } else {
-        gsap.to(panelRef.current, {
-          height: "0%",
-          padding: 0,
-          duration: 0.4,
-          ease: "power3.inOut",
-        });
-        gsap.to(panelCloseRef.current, {
-          opacity: 0,
+          opacity: panelOpen ? 1 : 0,
           duration: 0.3,
           ease: "power2.out",
         });
@@ -500,15 +511,9 @@ const Home = () => {
 
   useGSAP(
     function () {
-      if (vehiclePanelOpen) {
+      if (vehiclePanelRef.current) {
         gsap.to(vehiclePanelRef.current, {
-          y: "0%",
-          duration: 0.4,
-          ease: "power3.inOut",
-        });
-      } else {
-        gsap.to(vehiclePanelRef.current, {
-          y: "100%",
+          y: vehiclePanelOpen ? "0%" : "100%",
           duration: 0.4,
           ease: "power3.inOut",
         });
@@ -519,15 +524,9 @@ const Home = () => {
 
   useGSAP(
     function () {
-      if (confirmedRide) {
+      if (confirmedRideRef.current) {
         gsap.to(confirmedRideRef.current, {
-          y: "0%",
-          duration: 0.4,
-          ease: "power3.inOut",
-        });
-      } else {
-        gsap.to(confirmedRideRef.current, {
-          y: "100%",
+          y: confirmedRide ? "0%" : "100%",
           duration: 0.4,
           ease: "power3.inOut",
         });
@@ -538,15 +537,9 @@ const Home = () => {
 
   useGSAP(
     function () {
-      if (vehicleFound) {
+      if (vehicleFoundRef.current) {
         gsap.to(vehicleFoundRef.current, {
-          y: "0%",
-          duration: 0.4,
-          ease: "power3.inOut",
-        });
-      } else {
-        gsap.to(vehicleFoundRef.current, {
-          y: "100%",
+          y: vehicleFound ? "0%" : "100%",
           duration: 0.4,
           ease: "power3.inOut",
         });
@@ -557,15 +550,9 @@ const Home = () => {
 
   useGSAP(
     function () {
-      if (waitingForDriver) {
+      if (waitingForDriverRef.current) {
         gsap.to(waitingForDriverRef.current, {
-          y: "0%",
-          duration: 0.4,
-          ease: "power3.inOut",
-        });
-      } else {
-        gsap.to(waitingForDriverRef.current, {
-          y: "100%",
+          y: waitingForDriver ? "0%" : "100%",
           duration: 0.4,
           ease: "power3.inOut",
         });
@@ -597,7 +584,7 @@ const Home = () => {
 
         {/* Live Map Background */}
         <div className="h-full w-full">
-          <LiveTraking pickupCoords={pickupCoords} dropCoords={dropCoords} />
+          <LiveTraking pickupCoords={pickupCoords} dropCoords={dropCoords} captainCoords={captainCoords} />
         </div>
 
         {/* Bottom Booking Interface */}

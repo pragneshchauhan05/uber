@@ -10,6 +10,7 @@ const CaptainLogout = () => {
   useEffect(() => {
     const cleanup = () => {
       localStorage.removeItem("captainToken");
+      localStorage.removeItem("captain");
       sessionStorage.clear();
       navigate("/captain-login", { replace: true });
     };

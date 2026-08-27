@@ -20,17 +20,21 @@ const UserProtectWrapper = ({ children }) => {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        timeout: 5000,
       })
       .then((res) => {
         if (res.data?.user) {
           setUser(res.data.user);
+          localStorage.setItem("user", JSON.stringify(res.data.user));
         }
         setIsLoading(false);
       })
       .catch((err) => {
-        console.error(err);
-        if (!isUserLoaded) {
+        console.error("User profile revalidation error:", err);
+        const status = err.response?.status;
+        if (status === 401 || !isUserLoaded) {
           localStorage.removeItem("token");
+          localStorage.removeItem("user");
           navigate("/login");
         }
         setIsLoading(false);

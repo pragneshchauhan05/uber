@@ -1,6 +1,7 @@
 const socketIo = require("socket.io");
 const userModel = require("./models/user.model");
 const captainModel = require("./models/captain.model");
+const rideModel = require("./models/ride.model");
 
 let io;
 
@@ -32,13 +33,32 @@ function initializeSocket(server) {
         return socket.emit("error", { message: "Invalid location data" });
       }
 
+      const lat = Number(location.lat || location.ltd);
+      const lng = Number(location.lng);
+
       await captainModel.findByIdAndUpdate(userId, {
         location: {
-          ltd: location.ltd || location.lat,
-          lat: location.lat || location.ltd,
-          lng: location.lng,
+          ltd: lat,
+          lat,
+          lng,
         },
       });
+
+      // Relay captain location to rider if captain is in an active ride
+      try {
+        const activeRide = await rideModel
+          .findOne({ captain: userId, status: { $in: ["accepted", "ongoing"] } })
+          .populate("user");
+
+        if (activeRide && activeRide.user && activeRide.user.socketId) {
+          sendMessageToSocketId(activeRide.user.socketId, {
+            event: "captain-location-updated",
+            data: { captainId: userId, location: { lat, lng } },
+          });
+        }
+      } catch (err) {
+        console.error("Error relaying captain location:", err);
+      }
     });
 
     socket.on("disconnect", () => {

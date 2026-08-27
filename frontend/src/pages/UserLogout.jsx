@@ -10,6 +10,7 @@ const UserLogout = () => {
   useEffect(() => {
     const cleanup = () => {
       localStorage.removeItem("token");
+      localStorage.removeItem("user");
       sessionStorage.clear();
       navigate("/login", { replace: true });
     };

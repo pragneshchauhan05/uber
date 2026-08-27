@@ -20,17 +20,21 @@ const CaptainProtectWrapper = ({ children }) => {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        timeout: 5000,
       })
       .then((res) => {
         if (res.data?.captain) {
           setCaptain(res.data.captain);
+          localStorage.setItem("captain", JSON.stringify(res.data.captain));
         }
         setIsLoading(false);
       })
       .catch((err) => {
-        console.error(err);
-        if (!isCaptainLoaded) {
+        console.error("Captain profile revalidation error:", err);
+        const status = err.response?.status;
+        if (status === 401 || !isCaptainLoaded) {
           localStorage.removeItem("captainToken");
+          localStorage.removeItem("captain");
           navigate("/captain-login");
         }
         setIsLoading(false);

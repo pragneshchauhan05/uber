@@ -174,6 +174,7 @@ const CaptainSignup = () => {
         const data = response.data;
         setCaptain(data.captain);
         localStorage.setItem("captainToken", data.token);
+        localStorage.setItem("captain", JSON.stringify(data.captain));
         navigate("/captain-home");
       }
     } catch (err) {

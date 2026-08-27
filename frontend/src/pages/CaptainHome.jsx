@@ -163,48 +163,122 @@ const CaptainHome = () => {
     [confirmRidePopUpPanel],
   );
 
+  const [captainCoords, setCaptainCoords] = useState(null);
+  const [pickupCoords, setPickupCoords] = useState(null);
+
+  // Geocode pickup location when ride is accepted
+  useEffect(() => {
+    if (!ride?.pickup) {
+      setPickupCoords(null);
+      return;
+    }
+
+    const geocodePickup = async () => {
+      try {
+        const token = localStorage.getItem("captainToken");
+        const res = await axios.get(`${getApiBaseUrl()}/maps/get-coordinates`, {
+          params: { address: ride.pickup },
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.data?.ltd || res.data?.lat) {
+          setPickupCoords({
+            lat: Number(res.data.ltd || res.data.lat),
+            lng: Number(res.data.lng),
+          });
+        }
+      } catch (err) {}
+    };
+
+    geocodePickup();
+  }, [ride?.pickup]);
+
+  // Track Captain's current position
+  useEffect(() => {
+    if ("geolocation" in navigator) {
+      const watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          setCaptainCoords({
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+          });
+        },
+        () => {},
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 30000 },
+      );
+      return () => navigator.geolocation.clearWatch(watchId);
+    }
+  }, []);
+
+  const handleArrivedAtPickup = async () => {
+    if (!ride?._id) return;
+    try {
+      const token = localStorage.getItem("captainToken");
+      await axios.post(
+        `${getApiBaseUrl()}/rides/arrived`,
+        { rideId: ride._id },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+    } catch (err) {
+      console.error("Error marking arrival at pickup:", err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 flex justify-center items-center p-0 md:p-6">
-      <div className="w-full max-w-md h-screen md:h-[840px] md:rounded-3xl shadow-2xl overflow-hidden relative flex flex-col bg-white">
+      <div className="w-full max-w-md h-screen md:h-[840px] md:rounded-3xl shadow-2xl overflow-hidden relative bg-white">
         {/* Top Header */}
         <div className="absolute top-5 left-5 right-5 z-20 flex items-center justify-between pointer-events-none">
           <img
-            className="w-16 drop-shadow-md pointer-events-auto"
-            src="/uber.png"
+            className="w-24 h-auto object-contain drop-shadow-md pointer-events-auto"
+            src="https://download.logo.wine/logo/Uber/Uber-Logo.wine.png"
             alt="Uber"
           />
           <div className="flex items-center gap-2 pointer-events-auto">
-            <div className="bg-emerald-600 text-white text-xs font-bold px-2.5 py-1.5 rounded-full shadow-lg flex items-center gap-1">
+            <div className="bg-black text-white text-xs font-bold px-2.5 py-1.5 rounded-full shadow-lg border border-gray-800 flex items-center gap-1">
               <span className="w-2 h-2 bg-white rounded-full animate-ping"></span>
               Online
             </div>
             <Link
               to="/captain-logout"
               title="Logout"
-              className="h-9 w-9 bg-white/90 backdrop-blur-md shadow-lg flex items-center justify-center rounded-full text-gray-800 hover:bg-black hover:text-white transition-all cursor-pointer"
+              className="h-9 w-9 bg-white/90 backdrop-blur-md shadow-lg flex items-center justify-center rounded-full text-black hover:bg-black hover:text-white transition-all cursor-pointer"
             >
               <i className="ri-logout-box-r-line text-base"></i>
             </Link>
           </div>
         </div>
 
-        {/* Live Map */}
-        <div className="h-[60%] w-full relative">
-          <LiveTraking />
+        {/* Full-bleed Live Map Background */}
+        <div className="h-full w-full absolute inset-0 z-0">
+          <LiveTraking
+            pickupCoords={pickupCoords}
+            captainCoords={captainCoords}
+          />
         </div>
 
-        {/* Driver Dashboard Panel */}
-        <div className="h-[40%] bg-white p-5 rounded-t-3xl shadow-2xl -mt-6 z-10 border-t border-gray-100 flex flex-col justify-between">
+        {/* Driver Dashboard Bottom Sheet */}
+        <div className="absolute bottom-0 left-0 right-0 w-full bg-white p-5 rounded-t-3xl shadow-2xl z-10 border-t border-gray-100 flex flex-col justify-between">
+          <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-2"></div>
           <CaptainDetails />
 
-          <Link
-            to="/captain/create-route"
-            title="Publish Planned Route"
-            className="w-full bg-black hover:bg-gray-800 active:scale-[0.99] text-white py-3.5 rounded-2xl font-bold text-sm shadow-xl shadow-black/10 flex justify-center items-center cursor-pointer transition-all gap-2 mt-3 shrink-0"
-          >
-            <i className="ri-map-pin-add-line text-lg text-emerald-400"></i>
-            <span>Create Route</span>
-          </Link>
+          {confirmRidePopUpPanel ? (
+            <button
+              onClick={handleArrivedAtPickup}
+              className="w-full bg-black hover:bg-zinc-800 active:scale-[0.99] text-white py-3.5 rounded-2xl font-bold text-sm shadow-xl flex justify-center items-center cursor-pointer transition-all gap-2 mt-3 shrink-0"
+            >
+              <i className="ri-map-pin-user-fill text-lg text-white"></i>
+              <span>Arrived at Pickup</span>
+            </button>
+          ) : (
+            <Link
+              to="/captain/create-route"
+              title="Publish Planned Route"
+              className="w-full bg-black hover:bg-zinc-800 active:scale-[0.99] text-white py-3.5 rounded-2xl font-bold text-sm shadow-xl shadow-black/10 flex justify-center items-center cursor-pointer transition-all gap-2 mt-3 shrink-0"
+            >
+              <i className="ri-map-pin-add-line text-lg text-white"></i>
+              <span>Create Route</span>
+            </Link>
+          )}
         </div>
 
         {/* Ride Request Sheet */}

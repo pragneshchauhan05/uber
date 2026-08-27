@@ -60,12 +60,12 @@ const RidePopUp = (props) => {
 
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping"></span>
+          <span className="w-2.5 h-2.5 bg-black rounded-full animate-ping"></span>
           <h3 className="text-xl font-bold text-gray-900 tracking-tight">
             New Ride Request
           </h3>
         </div>
-        <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full">
+        <span className="text-xs font-bold text-white bg-black px-3 py-1 rounded-full">
           {distanceKm} away
         </span>
       </div>
@@ -114,7 +114,7 @@ const RidePopUp = (props) => {
         <div className="border-l-2 border-dashed border-gray-300 ml-1 pl-4 -my-1 py-0.5"></div>
 
         <div className="flex items-start gap-3">
-          <div className="w-2.5 h-2.5 bg-emerald-600 rounded-sm mt-1 shrink-0"></div>
+          <div className="w-2.5 h-2.5 bg-zinc-800 rounded-sm mt-1 shrink-0"></div>
           <div>
             <p className="text-[10px] font-bold text-gray-400 uppercase">
               Destination

@@ -13,6 +13,22 @@ const defaultCenter = {
   lng: 72.8311,
 };
 
+// Haversine distance helper in meters
+function getDistanceInMeters(lat1, lon1, lat2, lon2) {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
+  const R = 6371e3;
+  const phi1 = (lat1 * Math.PI) / 180;
+  const phi2 = (lat2 * Math.PI) / 180;
+  const deltaPhi = ((lat2 - lat1) * Math.PI) / 180;
+  const deltaLambda = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+    Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 const LeafletMap = ({ currentPosition, pickupCoords, dropCoords, captainCoords }) => {
   const mapContainerRef = useRef(null);
   const leafletMapRef = useRef(null);
@@ -22,6 +38,9 @@ const LeafletMap = ({ currentPosition, pickupCoords, dropCoords, captainCoords }
   const captainMarkerRef = useRef(null);
   const captainPolylineRef = useRef(null);
   const [isLeafletLoaded, setIsLeafletLoaded] = useState(Boolean(window.L));
+  const [osrmEta, setOsrmEta] = useState("");
+  const [osrmDistance, setOsrmDistance] = useState("");
+  const lastOsrmCalcRef = useRef(null);
 
   useEffect(() => {
     if (!document.getElementById("leaflet-css")) {
@@ -91,11 +110,11 @@ const LeafletMap = ({ currentPosition, pickupCoords, dropCoords, captainCoords }
       currentMarkerRef.current = null;
     }
 
-    // Captain Marker & Polyline to Pickup
+    // Captain Marker
     if (captainCoords?.lat && captainCoords?.lng) {
       const captainIcon = window.L.divIcon({
         className: "leaflet-captain-marker",
-        html: `<div style="background-color: #0f172a; color: #38bdf8; border: 2px solid #38bdf8; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px; box-shadow: 0 2px 8px rgba(0,0,0,0.4); display: flex; items-center; gap: 4px;">🚖 Captain</div>`,
+        html: `<div style="background-color: #0f172a; color: #38bdf8; border: 2px solid #38bdf8; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 11px; box-shadow: 0 2px 8px rgba(0,0,0,0.4); display: flex; items-center; gap: 4px;">🚖 Driver</div>`,
         iconSize: [68, 24],
         iconAnchor: [34, 24],
       });
@@ -108,32 +127,9 @@ const LeafletMap = ({ currentPosition, pickupCoords, dropCoords, captainCoords }
       } else {
         captainMarkerRef.current.setLatLng([captainCoords.lat, captainCoords.lng]);
       }
-
-      if (pickupCoords?.lat && pickupCoords?.lng) {
-        const lineCoords = [
-          [captainCoords.lat, captainCoords.lng],
-          [pickupCoords.lat, pickupCoords.lng],
-        ];
-        if (!captainPolylineRef.current) {
-          captainPolylineRef.current = window.L.polyline(lineCoords, {
-            color: "#2563eb",
-            weight: 5,
-            dashArray: "8, 8",
-            opacity: 0.85,
-          }).addTo(map);
-        } else {
-          captainPolylineRef.current.setLatLngs(lineCoords);
-        }
-      }
-    } else {
-      if (captainMarkerRef.current) {
-        map.removeLayer(captainMarkerRef.current);
-        captainMarkerRef.current = null;
-      }
-      if (captainPolylineRef.current) {
-        map.removeLayer(captainPolylineRef.current);
-        captainPolylineRef.current = null;
-      }
+    } else if (captainMarkerRef.current) {
+      map.removeLayer(captainMarkerRef.current);
+      captainMarkerRef.current = null;
     }
 
     // Pickup Marker
@@ -180,7 +176,50 @@ const LeafletMap = ({ currentPosition, pickupCoords, dropCoords, captainCoords }
       dropMarkerRef.current = null;
     }
 
-    // Fit bounds priority: 1) Captain to Pickup 2) Pickup to Drop 3) Single point
+    // Fetch OSRM Road Route for Leaflet
+    const origin = captainCoords?.lat ? captainCoords : pickupCoords;
+    const destination = captainCoords?.lat ? (pickupCoords?.lat ? pickupCoords : dropCoords) : dropCoords;
+
+    if (origin?.lat && destination?.lat) {
+      const distFromLast = lastOsrmCalcRef.current
+        ? getDistanceInMeters(origin.lat, origin.lng, lastOsrmCalcRef.current.lat, lastOsrmCalcRef.current.lng)
+        : 9999;
+
+      if (distFromLast > 25) {
+        lastOsrmCalcRef.current = { lat: origin.lat, lng: origin.lng };
+        fetch(
+          `https://router.project-osrm.org/route/v1/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson`,
+        )
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.routes && data.routes[0]) {
+              const route = data.routes[0];
+              const lineCoords = route.geometry.coordinates.map((c) => [c[1], c[0]]);
+
+              setOsrmDistance((route.distance / 1000).toFixed(1) + " km");
+              setOsrmEta(Math.ceil(route.duration / 60) + " mins");
+
+              if (!captainPolylineRef.current) {
+                captainPolylineRef.current = window.L.polyline(lineCoords, {
+                  color: "#2563eb",
+                  weight: 5,
+                  opacity: 0.85,
+                }).addTo(map);
+              } else {
+                captainPolylineRef.current.setLatLngs(lineCoords);
+              }
+            }
+          })
+          .catch((err) => {
+            console.error("OSRM Route Error:", err);
+          });
+      }
+    } else if (captainPolylineRef.current) {
+      map.removeLayer(captainPolylineRef.current);
+      captainPolylineRef.current = null;
+    }
+
+    // Fit bounds priority: 1) Captain to Pickup 2) Pickup to Drop
     if (captainCoords?.lat && pickupCoords?.lat) {
       const bounds = window.L.latLngBounds(
         [captainCoords.lat, captainCoords.lng],
@@ -198,13 +237,33 @@ const LeafletMap = ({ currentPosition, pickupCoords, dropCoords, captainCoords }
     }
   }, [isLeafletLoaded, currentPosition, pickupCoords, dropCoords, captainCoords]);
 
-  return <div ref={mapContainerRef} className="w-full h-full z-0 relative" />;
+  return (
+    <div ref={mapContainerRef} className="w-full h-full z-0 relative">
+      {osrmDistance && osrmEta && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[400] bg-black/90 text-white px-4 py-2 rounded-full shadow-2xl border border-white/20 flex items-center gap-2 text-xs font-bold pointer-events-none">
+          <span className="text-emerald-400">🚗 {osrmEta}</span>
+          <span className="text-gray-400">•</span>
+          <span>{osrmDistance} away</span>
+        </div>
+      )}
+    </div>
+  );
 };
 
 const LiveTraking = ({ pickupCoords, dropCoords, captainCoords }) => {
   const [currentPosition, setCurrentPosition] = useState(defaultCenter);
   const [map, setMap] = useState(null);
   const [mapError, setMapError] = useState(false);
+
+  // Directions state
+  const [directionsPath, setDirectionsPath] = useState([]);
+  const [distanceText, setDistanceText] = useState("");
+  const [durationText, setDurationText] = useState("");
+  const [isLoadingRoute, setIsLoadingRoute] = useState(false);
+  const [isDriverArrived, setIsDriverArrived] = useState(false);
+
+  const lastCalcOriginRef = useRef(null);
+  const lastCalcDestRef = useRef(null);
 
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
 
@@ -266,6 +325,144 @@ const LiveTraking = ({ pickupCoords, dropCoords, captainCoords }) => {
     setMap(null);
   }, []);
 
+  // Calculate Real Road-Following Driving Route between Driver & Destination
+  useEffect(() => {
+    // Determine Origin and Destination
+    let origin = null;
+    let destination = null;
+
+    if (captainCoords?.lat && captainCoords?.lng && dropCoords?.lat && dropCoords?.lng) {
+      origin = captainCoords;
+      destination = dropCoords;
+    } else if (captainCoords?.lat && captainCoords?.lng && pickupCoords?.lat && pickupCoords?.lng) {
+      origin = captainCoords;
+      destination = pickupCoords;
+    } else if (pickupCoords?.lat && pickupCoords?.lng && dropCoords?.lat && dropCoords?.lng) {
+      origin = pickupCoords;
+      destination = dropCoords;
+    }
+
+    if (!origin?.lat || !destination?.lat) {
+      setDirectionsPath([]);
+      setDistanceText("");
+      setDurationText("");
+      setIsDriverArrived(false);
+      return;
+    }
+
+    // Check distance between driver & destination to handle arrival (< 30m)
+    const currentDistMeters = getDistanceInMeters(
+      origin.lat,
+      origin.lng,
+      destination.lat,
+      destination.lng,
+    );
+
+    if (currentDistMeters > 0 && currentDistMeters < 30) {
+      setIsDriverArrived(true);
+      setDistanceText("Arrived");
+      setDurationText("0 min");
+    } else {
+      setIsDriverArrived(false);
+    }
+
+    // Check movement threshold (> 15 meters)
+    const distOriginMoved = lastCalcOriginRef.current
+      ? getDistanceInMeters(
+          origin.lat,
+          origin.lng,
+          lastCalcOriginRef.current.lat,
+          lastCalcOriginRef.current.lng,
+        )
+      : 9999;
+
+    const distDestMoved = lastCalcDestRef.current
+      ? getDistanceInMeters(
+          destination.lat,
+          destination.lng,
+          lastCalcDestRef.current.lat,
+          lastCalcDestRef.current.lng,
+        )
+      : 9999;
+
+    if (distOriginMoved < 15 && distDestMoved < 15 && directionsPath.length > 0) {
+      return;
+    }
+
+    lastCalcOriginRef.current = { lat: origin.lat, lng: origin.lng };
+    lastCalcDestRef.current = { lat: destination.lat, lng: destination.lng };
+    setIsLoadingRoute(true);
+
+    const fetchOsrmRoadRoute = () => {
+      fetch(
+        `https://router.project-osrm.org/route/v1/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson`,
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          setIsLoadingRoute(false);
+          if (data.routes && data.routes[0]) {
+            const route = data.routes[0];
+            const pathPoints = route.geometry.coordinates.map((c) => ({
+              lat: c[1],
+              lng: c[0],
+            }));
+            setDirectionsPath(pathPoints);
+            setDistanceText((route.distance / 1000).toFixed(1) + " km");
+            setDurationText(Math.ceil(route.duration / 60) + " mins");
+          }
+        })
+        .catch((err) => {
+          console.error("OSRM Road Route Fallback Error:", err);
+          setIsLoadingRoute(false);
+        });
+    };
+
+    if (window.google && window.google.maps) {
+      try {
+        const directionsService = new window.google.maps.DirectionsService();
+        directionsService.route(
+          {
+            origin: new window.google.maps.LatLng(origin.lat, origin.lng),
+            destination: new window.google.maps.LatLng(destination.lat, destination.lng),
+            travelMode: window.google.maps.TravelMode.DRIVING,
+          },
+          (result, status) => {
+            if (status === window.google.maps.DirectionsStatus.OK && result.routes?.[0]) {
+              setIsLoadingRoute(false);
+              const route = result.routes[0];
+              const leg = route.legs?.[0];
+
+              if (route.overview_path) {
+                const pathPoints = route.overview_path.map((pt) => ({
+                  lat: pt.lat(),
+                  lng: pt.lng(),
+                }));
+                setDirectionsPath(pathPoints);
+              }
+
+              if (leg) {
+                setDistanceText(leg.distance?.text || "");
+                setDurationText(leg.duration?.text || "");
+              }
+            } else {
+              console.warn(
+                "Google Directions status:",
+                status,
+                "- using OSRM real road route",
+              );
+              fetchOsrmRoadRoute();
+            }
+          },
+        );
+      } catch (err) {
+        console.warn("Google Directions exception - using OSRM real road route", err);
+        fetchOsrmRoadRoute();
+      }
+    } else {
+      fetchOsrmRoadRoute();
+    }
+  }, [map, captainCoords, pickupCoords, dropCoords]);
+
   // Fit bounds when Google Maps is loaded and coordinates change
   useEffect(() => {
     if (map && window.google) {
@@ -277,6 +474,11 @@ const LiveTraking = ({ pickupCoords, dropCoords, captainCoords }) => {
       } else if (pickupCoords?.lat && dropCoords?.lat) {
         const bounds = new window.google.maps.LatLngBounds();
         bounds.extend(pickupCoords);
+        bounds.extend(dropCoords);
+        map.fitBounds(bounds, { top: 60, bottom: 60, left: 60, right: 60 });
+      } else if (captainCoords?.lat && dropCoords?.lat) {
+        const bounds = new window.google.maps.LatLngBounds();
+        bounds.extend(captainCoords);
         bounds.extend(dropCoords);
         map.fitBounds(bounds, { top: 60, bottom: 60, left: 60, right: 60 });
       } else if (pickupCoords?.lat) {
@@ -315,56 +517,88 @@ const LiveTraking = ({ pickupCoords, dropCoords, captainCoords }) => {
       : currentPosition;
 
   return (
-    <GoogleMap
-      mapContainerStyle={containerStyle}
-      center={mapCenter}
-      zoom={14}
-      onLoad={onLoad}
-      onUnmount={onUnmount}
-      options={{
-        disableDefaultUI: true,
-        zoomControl: true,
-      }}
-    >
-      {!pickupCoords && !dropCoords && !captainCoords && (
-        <MarkerF position={currentPosition} />
+    <div className="w-full h-full relative">
+      {/* Floating Distance & ETA Overlay Badge */}
+      {(isLoadingRoute || distanceText || durationText) && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 bg-black text-white px-4 py-2 rounded-full shadow-2xl border border-gray-700 flex items-center gap-2.5 pointer-events-none transition-all animate-fade-in whitespace-nowrap">
+          {isLoadingRoute ? (
+            <div className="flex items-center gap-2 text-xs font-semibold text-gray-300">
+              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <span>Calculating Route...</span>
+            </div>
+          ) : isDriverArrived ? (
+            <div className="flex items-center gap-2 text-xs font-bold text-white">
+              <span className="w-2 h-2 bg-white rounded-full animate-ping"></span>
+              <span>Arrived at Destination!</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2.5 text-xs font-bold">
+              <span className="text-white flex items-center gap-1">
+                <i className="ri-car-fill text-sm"></i>
+                {durationText} ETA
+              </span>
+              <span className="text-white/40">•</span>
+              <span className="text-gray-300">{distanceText} away</span>
+            </div>
+          )}
+        </div>
       )}
 
-      {captainCoords?.lat && captainCoords?.lng && (
-        <MarkerF
-          position={captainCoords}
-          title="Captain Location"
-          label={{ text: "🚖", color: "#ffffff", fontWeight: "bold" }}
-        />
-      )}
+      <GoogleMap
+        mapContainerStyle={containerStyle}
+        center={mapCenter}
+        zoom={14}
+        onLoad={onLoad}
+        onUnmount={onUnmount}
+        options={{
+          disableDefaultUI: true,
+          zoomControl: true,
+        }}
+      >
+        {!pickupCoords && !dropCoords && !captainCoords && (
+          <MarkerF position={currentPosition} />
+        )}
 
-      {pickupCoords?.lat && pickupCoords?.lng && (
-        <MarkerF
-          position={pickupCoords}
-          title="Pickup Location"
-          label={{ text: "P", color: "#ffffff", fontWeight: "bold" }}
-        />
-      )}
+        {/* Driver Marker */}
+        {captainCoords?.lat && captainCoords?.lng && (
+          <MarkerF
+            position={captainCoords}
+            title="Driver Location"
+            label={{ text: "🚖", color: "#ffffff", fontWeight: "bold" }}
+          />
+        )}
 
-      {dropCoords?.lat && dropCoords?.lng && (
-        <MarkerF
-          position={dropCoords}
-          title="Drop Location"
-          label={{ text: "D", color: "#ffffff", fontWeight: "bold" }}
-        />
-      )}
+        {/* Pickup Marker */}
+        {pickupCoords?.lat && pickupCoords?.lng && (
+          <MarkerF
+            position={pickupCoords}
+            title="Pickup Location"
+            label={{ text: "📍", color: "#ffffff", fontWeight: "bold" }}
+          />
+        )}
 
-      {captainCoords?.lat && captainCoords?.lng && pickupCoords?.lat && pickupCoords?.lng && (
-        <Polyline
-          path={[captainCoords, pickupCoords]}
-          options={{
-            strokeColor: "#2563eb",
-            strokeOpacity: 0.85,
-            strokeWeight: 5,
-          }}
-        />
-      )}
-    </GoogleMap>
+        {/* Drop Marker */}
+        {dropCoords?.lat && dropCoords?.lng && (
+          <MarkerF
+            position={dropCoords}
+            title="Drop Location"
+            label={{ text: "🏁", color: "#ffffff", fontWeight: "bold" }}
+          />
+        )}
+
+        {/* Real Road-following Polyline */}
+        {directionsPath.length > 0 && (
+          <Polyline
+            path={directionsPath}
+            options={{
+              strokeColor: "#000000",
+              strokeOpacity: 0.95,
+              strokeWeight: 6,
+            }}
+          />
+        )}
+      </GoogleMap>
+    </div>
   );
 };
 

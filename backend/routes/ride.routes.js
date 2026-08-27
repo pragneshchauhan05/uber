@@ -36,13 +36,20 @@ router.post(
   rideController.confirmRide,
 );
 
+router.post(
+  "/arrived",
+  authMiddleware.authCaptain,
+  body("rideId").isMongoId().withMessage("Invalid ride id"),
+  rideController.arrivedAtPickup,
+);
+
 router.get(
   "/start-ride",
   authMiddleware.authCaptain,
   query("rideId").isMongoId().withMessage("Invalid ride id"),
   query("otp")
     .isString()
-    .isLength({ min: 6, max: 6 })
+    .isLength({ min: 4, max: 6 })
     .withMessage("Invalid OTP"),
   rideController.startRide,
 );

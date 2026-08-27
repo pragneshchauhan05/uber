@@ -99,6 +99,15 @@ module.exports.createRide = async ({
   return ride;
 };
 
+function sanitizeRideForCaptain(ride) {
+  if (!ride) return null;
+  const rideObj = typeof ride.toObject === "function" ? ride.toObject() : { ...ride };
+  if (rideObj.status === "accepted" || rideObj.status === "arrived") {
+    rideObj.destination = "*** Protected until OTP verified ***";
+  }
+  return rideObj;
+}
+
 module.exports.confirmRide = async ({ rideId, captain }) => {
   if (!rideId) {
     throw new Error("Ride id is required");
@@ -125,6 +134,26 @@ module.exports.confirmRide = async ({ rideId, captain }) => {
   return ride;
 };
 
+module.exports.arrivedAtPickup = async ({ rideId, captain }) => {
+  if (!rideId) {
+    throw new Error("Ride id is required");
+  }
+
+  const ride = await ridemodel.findOneAndUpdate(
+    { _id: rideId, captain: captain._id },
+    { status: "arrived" },
+    { new: true },
+  )
+    .populate("user")
+    .populate("captain");
+
+  if (!ride) {
+    throw new Error("Ride not found");
+  }
+
+  return ride;
+};
+
 module.exports.startRide = async ({ rideId, otp, captain }) => {
   if (!rideId || !otp) {
     throw new Error("Ride id and OTP are required");
@@ -140,20 +169,23 @@ module.exports.startRide = async ({ rideId, otp, captain }) => {
     throw new Error("Ride not found");
   }
 
-  if (ride.status !== "accepted") {
-    throw new Error("Ride not accepted");
+  if (ride.status !== "accepted" && ride.status !== "arrived") {
+    throw new Error("Ride cannot be started at current state");
   }
 
   if (ride.otp !== otp) {
-    throw new Error("Invalid OTP");
+    throw new Error("Invalid OTP. Please ask the rider for the correct OTP.");
   }
 
-  await ridemodel.findOneAndUpdate(
+  const updatedRide = await ridemodel.findOneAndUpdate(
     { _id: rideId },
     { status: "ongoing" },
-  );
+    { new: true },
+  )
+    .populate("user")
+    .populate("captain");
 
-  return ride;
+  return updatedRide;
 };
 
 module.exports.endRide = async ({ rideId, captain }) => {
@@ -173,7 +205,7 @@ module.exports.endRide = async ({ rideId, captain }) => {
     throw new Error("Ride not found");
   }
 
-  if (ride.status !== "ongoing" && ride.status !== "accepted") {
+  if (ride.status !== "ongoing" && ride.status !== "accepted" && ride.status !== "arrived") {
     throw new Error("Ride is not active");
   }
 
@@ -190,6 +222,7 @@ module.exports.endRide = async ({ rideId, captain }) => {
 };
 
 module.exports.getFare = getFare;
+module.exports.sanitizeRideForCaptain = sanitizeRideForCaptain;
 
 
 

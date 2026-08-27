@@ -111,7 +111,7 @@ const UserLogin = () => {
       <div className="w-full max-w-md min-h-screen md:min-h-[750px] md:h-auto bg-white md:rounded-3xl shadow-xl p-8 flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between mb-8">
-            <img className="w-20" src="/uber.png" alt="Uber" />
+            <img className="w-24 h-auto object-contain" src="https://download.logo.wine/logo/Uber/Uber-Logo.wine.png" alt="Uber" />
             <span className="text-xs font-semibold uppercase tracking-wider bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
               Rider Login
             </span>
@@ -198,7 +198,7 @@ const UserLogin = () => {
         <div className="pt-8 border-t border-gray-100">
           <Link
             to="/captain-login"
-            className="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] transition-all duration-200 flex items-center justify-center text-white font-semibold py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-600/10 text-base"
+            className="w-full bg-black hover:bg-zinc-800 active:scale-[0.99] transition-all duration-200 flex items-center justify-center text-white font-semibold py-3.5 px-4 rounded-xl shadow-lg text-base"
           >
             <i className="ri-steering-2-line mr-2 text-xl"></i>
             Sign in as Driver / Captain

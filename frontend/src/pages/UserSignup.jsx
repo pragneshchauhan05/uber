@@ -109,7 +109,7 @@ const UserSignup = () => {
       <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-6 sm:p-8 flex flex-col justify-between border border-gray-100 min-h-[580px]">
         <div>
           <div className="flex items-center justify-between mb-6">
-            <img className="w-20" src="/uber.png" alt="Uber" />
+            <img className="w-24 h-auto object-contain" src="https://download.logo.wine/logo/Uber/Uber-Logo.wine.png" alt="Uber" />
             <span className="text-xs font-semibold uppercase tracking-wider bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
               New Account
             </span>

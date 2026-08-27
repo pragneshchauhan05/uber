@@ -12,11 +12,13 @@ const formatPrice = (val) => {
 const ConfirmRidePop = (props) => {
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [otpError, setOtpError] = useState("");
   const navigate = useNavigate();
 
   const submitHandler = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setOtpError("");
 
     try {
       const response = await axios.get(`${getApiBaseUrl()}/rides/start-ride`, {
@@ -35,6 +37,10 @@ const ConfirmRidePop = (props) => {
       }
     } catch (err) {
       console.error("Error starting ride:", err);
+      setOtpError(
+        err.response?.data?.message ||
+          "Invalid OTP. Please ask the rider for the correct OTP.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -49,6 +55,10 @@ const ConfirmRidePop = (props) => {
       ? (props.ride.distance / 1000).toFixed(1) + " km"
       : props.ride.distance
     : "2.2 km";
+
+  const isDestinationProtected =
+    !props.ride?.destination ||
+    props.ride?.destination.includes("Protected");
 
   const handleCancelRide = async () => {
     try {
@@ -118,21 +128,34 @@ const ConfirmRidePop = (props) => {
       {/* Route Details */}
       <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 space-y-2 mb-4">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-black rounded-full"></div>
+          <div className="w-2.5 h-2.5 bg-black rounded-full shrink-0"></div>
           <h4 className="text-xs font-semibold text-gray-800 line-clamp-1">
             {props.ride?.pickup}
           </h4>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-emerald-600 rounded-sm"></div>
+          <div className="w-2.5 h-2.5 bg-zinc-800 rounded-sm shrink-0"></div>
           <h4 className="text-xs font-semibold text-gray-800 line-clamp-1">
-            {props.ride?.destination}
+            {isDestinationProtected ? (
+              <span className="text-gray-400 font-medium italic">
+                🔒 Hidden until OTP verified
+              </span>
+            ) : (
+              props.ride?.destination
+            )}
           </h4>
         </div>
       </div>
 
       {/* PIN Verification Form */}
       <form onSubmit={submitHandler} className="space-y-3">
+        {otpError && (
+          <div className="bg-zinc-900 border border-zinc-700 text-white text-xs font-bold p-3 rounded-xl text-center animate-shake">
+            <i className="ri-error-warning-fill mr-1 text-sm text-red-400"></i>
+            {otpError}
+          </div>
+        )}
+
         <div>
           <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5 text-center">
             Enter Trip PIN
@@ -144,14 +167,17 @@ const ConfirmRidePop = (props) => {
             value={otp}
             maxLength={6}
             required
-            onChange={(e) => setOtp(e.target.value)}
+            onChange={(e) => {
+              setOtp(e.target.value);
+              if (otpError) setOtpError("");
+            }}
           />
         </div>
 
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] transition-all duration-200 text-white font-bold py-3.5 rounded-2xl text-base shadow-lg shadow-emerald-600/20 flex justify-center items-center cursor-pointer disabled:opacity-60"
+          className="w-full bg-black hover:bg-zinc-800 active:scale-[0.99] transition-all duration-200 text-white font-bold py-3.5 rounded-2xl text-base shadow-lg flex justify-center items-center cursor-pointer disabled:opacity-60"
         >
           {isLoading ? (
             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

@@ -24,8 +24,8 @@ const Start = () => {
         {/* Top Header */}
         <div className="relative z-10 p-8 pt-10">
           <img
-            className="w-24 drop-shadow-md"
-            src="/images  -removebg-preview.png"
+            className="w-28 h-auto object-contain drop-shadow-md brightness-0 invert"
+            src="https://download.logo.wine/logo/Uber/Uber-Logo.wine.png"
             alt="Uber"
           />
         </div>

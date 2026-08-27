@@ -33,7 +33,7 @@ const PWAInstallPrompt = () => {
   return (
     <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:bottom-4 z-50 max-w-sm bg-black text-white p-4 rounded-2xl shadow-2xl border border-gray-800 flex items-center justify-between gap-3 animate-slide-up">
       <div className="flex items-center gap-3">
-        <img src="/uber.png" alt="Uber" className="w-10 h-10 object-contain bg-white rounded-xl p-1" />
+        <img src="https://download.logo.wine/logo/Uber/Uber-Logo.wine.png" alt="Uber" className="w-10 h-10 object-contain bg-white rounded-xl p-1" />
         <div>
           <h4 className="font-bold text-sm leading-tight">Install Uber App</h4>
           <p className="text-xs text-gray-400">Add to home screen for faster access</p>

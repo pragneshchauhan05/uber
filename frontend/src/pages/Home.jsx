@@ -471,21 +471,46 @@ const Home = () => {
   };
 
   const createRide = async (vehicleType) => {
-    const response = await axios.post(
-      `${getApiBaseUrl()}/rides/create`,
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setVehicleFound(false);
+        alert("Session expired. Please log in again.");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/login");
+        return;
+      }
 
-      {
-        pickup,
-        destination,
-        vehicleType,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+      const response = await axios.post(
+        `${getApiBaseUrl()}/rides/create`,
+        {
+          pickup,
+          destination,
+          vehicleType,
         },
-      },
-    );
-    console.log(response.data);
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+      console.log("Ride created successfully:", response.data);
+    } catch (error) {
+      console.error("Error creating ride:", error);
+      setVehicleFound(false);
+
+      if (error.response?.status === 401) {
+        alert("Your session has expired or is invalid. Please log in again.");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/login");
+      } else {
+        alert(
+          error.response?.data?.message || "Failed to create ride. Please try again.",
+        );
+      }
+    }
   };
 
   useGSAP(
@@ -567,10 +592,10 @@ const Home = () => {
         {/* Top Header Logo & Logout */}
         <div className="absolute top-5 left-5 right-5 z-20 flex items-center justify-between pointer-events-none">
           <img
-            className={`w-16 transition-opacity duration-300 drop-shadow-md pointer-events-auto ${
+            className={`w-24 h-auto object-contain transition-opacity duration-300 drop-shadow-md pointer-events-auto ${
               panelOpen ? "opacity-0 pointer-events-none" : "opacity-100"
             }`}
-            src="/uber.png"
+            src="https://download.logo.wine/logo/Uber/Uber-Logo.wine.png"
             alt="Uber logo"
           />
           <Link

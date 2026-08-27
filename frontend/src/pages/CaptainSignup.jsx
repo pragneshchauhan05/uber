@@ -194,8 +194,8 @@ const CaptainSignup = () => {
       <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-6 sm:p-8 flex flex-col justify-between border border-gray-100 min-h-[620px]">
         <div>
           <div className="flex items-center justify-between mb-6">
-            <img className="w-20" src="/uber.png" alt="Uber" />
-            <span className="text-xs font-semibold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full flex items-center gap-1">
+            <img className="w-24 h-auto object-contain" src="https://download.logo.wine/logo/Uber/Uber-Logo.wine.png" alt="Uber" />
+            <span className="text-xs font-semibold uppercase tracking-wider bg-black text-white px-3 py-1 rounded-full flex items-center gap-1 border border-gray-800">
               <i className="ri-steering-2-fill text-sm"></i> Driver Registration
             </span>
           </div>

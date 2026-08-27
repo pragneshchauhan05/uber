@@ -368,13 +368,13 @@ const CreateRoute = () => {
             <div
               className={`p-3.5 rounded-2xl text-xs font-semibold flex items-center gap-2 ${
                 alertMsg.type === "success"
-                  ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                  : "bg-red-50 text-red-700 border border-red-200"
+                  ? "bg-black text-white border border-gray-800"
+                  : "bg-zinc-900 text-white border border-zinc-700"
               }`}
             >
               <i
                 className={`text-base ${
-                  alertMsg.type === "success" ? "ri-checkbox-circle-fill" : "ri-error-warning-fill"
+                  alertMsg.type === "success" ? "ri-checkbox-circle-fill text-white" : "ri-error-warning-fill text-white"
                 }`}
               ></i>
               <span>{alertMsg.text}</span>
@@ -384,7 +384,7 @@ const CreateRoute = () => {
           {/* Form Card */}
           <form onSubmit={handlePublish} className="bg-gray-50 border border-gray-100 p-4 rounded-3xl space-y-3.5">
             <h3 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
-              <i className="ri-route-line text-emerald-600"></i> Route Details
+              <i className="ri-route-line text-black"></i> Route Details
             </h3>
 
             {/* Pickup / Start Location */}
@@ -535,11 +535,11 @@ const CreateRoute = () => {
 
             {/* Route Preview Card */}
             {(startAddress || destAddress) && (
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs space-y-1">
-                <p className="font-bold text-emerald-900 uppercase text-[10px] tracking-wider">
+              <div className="p-3 bg-gray-100 border border-gray-200 rounded-2xl text-xs space-y-1">
+                <p className="font-bold text-black uppercase text-[10px] tracking-wider">
                   Preview Route
                 </p>
-                <div className="text-emerald-950 space-y-0.5 font-medium">
+                <div className="text-gray-900 space-y-0.5 font-medium">
                   <p>
                     <span className="font-bold text-gray-700">From:</span> {startAddress || "Ahmedabad"}
                   </p>
@@ -590,7 +590,7 @@ const CreateRoute = () => {
                   className="bg-white border border-gray-200 p-3.5 rounded-2xl shadow-sm space-y-2 relative"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-black text-white border border-gray-800">
                       {rt.status}
                     </span>
                     <div className="flex items-center gap-2">
@@ -600,7 +600,7 @@ const CreateRoute = () => {
                             activeMatchingRouteId === rt._id ? null : rt._id
                           )
                         }
-                        className="text-xs font-bold text-emerald-600 hover:text-emerald-800 flex items-center gap-1 cursor-pointer bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200"
+                        className="text-xs font-bold text-black hover:text-gray-800 flex items-center gap-1 cursor-pointer bg-gray-100 px-2.5 py-1 rounded-lg border border-gray-300"
                       >
                         <i className="ri-user-shared-line text-sm"></i>
                         <span>

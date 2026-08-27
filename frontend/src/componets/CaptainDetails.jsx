@@ -39,14 +39,14 @@ const CaptainDetails = () => {
           <h4 className="text-xl font-extrabold text-gray-900">
             ₹{formattedEarnings}
           </h4>
-          <p className="text-xs font-semibold text-emerald-600">Earned today</p>
+          <p className="text-xs font-semibold text-gray-500">Earned today</p>
         </div>
       </div>
 
       {/* Driver Performance Metrics */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-gray-50 p-3.5 rounded-2xl border border-gray-100 text-center">
-          <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mx-auto mb-1">
+          <div className="w-8 h-8 bg-black text-white rounded-xl flex items-center justify-center mx-auto mb-1">
             <i className="ri-timer-line text-lg"></i>
           </div>
           <h5 className="text-base font-bold text-gray-900">
@@ -58,7 +58,7 @@ const CaptainDetails = () => {
         </div>
 
         <div className="bg-gray-50 p-3.5 rounded-2xl border border-gray-100 text-center">
-          <div className="w-8 h-8 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center mx-auto mb-1">
+          <div className="w-8 h-8 bg-black text-white rounded-xl flex items-center justify-center mx-auto mb-1">
             <i className="ri-speed-up-line text-lg"></i>
           </div>
           <h5 className="text-base font-bold text-gray-900">
@@ -68,7 +68,7 @@ const CaptainDetails = () => {
         </div>
 
         <div className="bg-gray-50 p-3.5 rounded-2xl border border-gray-100 text-center">
-          <div className="w-8 h-8 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center mx-auto mb-1">
+          <div className="w-8 h-8 bg-black text-white rounded-xl flex items-center justify-center mx-auto mb-1">
             <i className="ri-star-fill text-lg"></i>
           </div>
           <h5 className="text-base font-bold text-gray-900">

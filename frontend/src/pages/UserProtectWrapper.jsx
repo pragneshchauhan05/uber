@@ -48,7 +48,7 @@ const UserProtectWrapper = ({ children }) => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white flex flex-col justify-center items-center p-6">
-        <img className="w-20 mb-6" src="/uber.png" alt="Uber" />
+        <img className="w-24 h-auto object-contain mb-6" src="https://download.logo.wine/logo/Uber/Uber-Logo.wine.png" alt="Uber" />
         <div className="w-8 h-8 border-3 border-black border-t-transparent rounded-full animate-spin"></div>
         <p className="text-xs font-semibold text-gray-500 mt-4 tracking-wider uppercase">Authenticating...</p>
       </div>

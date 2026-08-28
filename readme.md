@@ -237,23 +237,6 @@ npm install
 
 ---
 
-### 2. Configure Environment Variables
-
-Create `.env` in `backend/`:
-```env
-PORT=4000
-DB_CONNECT=mongodb://localhost:27017/uber
-JWT_SECRET=your_jwt_secret_key_here
-GOOGLE_MAPS_API=your_google_maps_api_key_here
-```
-
-Create `.env` in `frontend/`:
-```env
-VITE_BASE_URL=http://localhost:4000
-VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
-```
-
----
 
 ### 3. Run Locally
 
@@ -271,12 +254,4 @@ Open `http://localhost:5173` in your browser.
 
 ---
 
-## 🧪 Testing Phase 1: Captain Route Creation
 
-1. Login as a Captain at `/captain-login`.
-2. Click **"Create Route"** in the top header (or go to `/captain/create-route`).
-3. Enter Start Location (e.g., `Ahmedabad`) and Destination (e.g., `Gandhinagar`).
-4. Select Date (e.g., `2026-08-20`), Departure Time (e.g., `09:00 AM`), and Available Seats (e.g., `3`).
-5. Observe the map preview with Polyline route line and preview summary card.
-6. Click **"Publish Route"**.
-7. Confirm that the route appears under **"My Published Planned Routes"** and test deletion.
